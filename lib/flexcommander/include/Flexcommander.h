@@ -1,12 +1,20 @@
 #pragma once
 #include <blkid/blkid.h>
+#include <stdio.h>
 
-typedef struct FlexCommanderInfo {
+typedef struct FlexCommanderProbeInfo {
     blkid_cache blkCache;
-} FlexCommanderInfo;
+} FlexCommanderProbeInfo;
 
-void Hello();
+typedef struct FlexCommanderFS {
+    FILE *file;
+} FlexCommanderFS;
 
-int Init(FlexCommanderInfo* info);
-int ProbeDevices(FlexCommanderInfo* info);
-int IterateDevices(FlexCommanderInfo* info);
+//Functions for block device probing
+int Init(FlexCommanderProbeInfo* info);
+int ProbeDevices(FlexCommanderProbeInfo* info);
+int IterateDevices(FlexCommanderProbeInfo* info);
+
+//Functions for filesystem interaction
+int FlexOpenAndMount(const char * path, FlexCommanderFS* fs);
+int FlexVerify(FlexCommanderFS* fs);

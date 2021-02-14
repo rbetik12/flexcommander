@@ -6,7 +6,7 @@
 
 bool isRoot = true;
 
-int ProbeDevices(FlexCommanderInfo* info) {
+int ProbeDevices(FlexCommanderProbeInfo* info) {
     int status = blkid_probe_all(info->blkCache);
 
     if (status < 0){
@@ -16,7 +16,7 @@ int ProbeDevices(FlexCommanderInfo* info) {
     return 0;
 }
 
-int IterateDevices(FlexCommanderInfo* info) {
+int IterateDevices(FlexCommanderProbeInfo* info) {
     blkid_dev device;
     blkid_dev_iterate iterator = blkid_dev_iterate_begin(info->blkCache);
     const double gibibyteDivider = pow(2, 30);
