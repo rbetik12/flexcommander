@@ -8,13 +8,23 @@
 #include <fcntl.h>
 #include <linux/loop.h>
 #include <zconf.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <time.h>
+
+#define DATE_BUFFER_SIZE 64
 
 int SetupLoopDevice(char* deviceName, FILE* file);
 
 int Mount(const char* path, FlexCommanderFS* fs);
 
+void FormatDate(char* buffer, time_t value);
+
+void PrintMode(struct stat fileStat);
+
 int FlexOpenAndMount(const char* path, FlexCommanderFS* fs) {
     FILE* hfs = fopen(path, "rb+");
+    fs->mountedDirName = "/mnt/temp";
 
     if (hfs == NULL) {
         fprintf(stderr, "Can't open file system at %s\n", path);
@@ -117,6 +127,73 @@ int SetupLoopDevice(char* deviceName, FILE* file) {
     return 0;
 }
 
+int FlexGetDirElements(const char* path, FlexCommanderFS* fs) {
+    DIR *dir;
+    struct dirent *entry;
 
+    dir = opendir(path);
+    if (!dir) {
+        perror("diropen");
+        return -1;
+    };
+
+    printf("Name        Type        Size        Modified        Mode\n");
+    char stringBuffer[4096];
+    while ( (entry = readdir(dir)) != NULL) {
+        printf("%s      ", entry->d_name);
+        switch (entry->d_type) {
+            case DT_UNKNOWN:
+                printf("%s      ", "Unknown");
+                break;
+            case DT_REG:
+                printf("%s      ", "File");
+                break;
+            case DT_DIR:
+                printf("%s      ", "Directory");
+                break;
+        }
+
+        const char* fullFilePath = strcat(stringBuffer, path);
+        fullFilePath = strcat(fullFilePath, "/");
+        fullFilePath = strcat(fullFilePath, entry->d_name);
+
+        struct stat statBuffer;
+        if (stat(fullFilePath, &statBuffer)) {
+            perror("Can't get file stats!\n");
+            memset(fullFilePath, 0, sizeof(stringBuffer));
+            printf("-1      -1\n");
+            break;
+        }
+
+        printf("%ld     ", statBuffer.st_size);
+        char date[DATE_BUFFER_SIZE] = {0};
+        FormatDate(date, statBuffer.st_mtim.tv_sec);
+        printf("        %s      ", date);
+        PrintMode(statBuffer);
+        printf("\n");
+        memset(fullFilePath, 0, sizeof(stringBuffer));
+    };
+
+    closedir(dir);
+    return 0;
+}
+
+void FormatDate(char* buffer, time_t value) {
+    strftime(buffer, DATE_BUFFER_SIZE, "%d.%m.%Y %H:%M:%S", localtime(&value));
+}
+
+void PrintMode(struct stat fileStat) {
+    //Took that from stackoverflow, cause I am too lazy for doing that by myself. I am sorry :(
+    printf( (S_ISDIR(fileStat.st_mode)) ? "d" : "-");
+    printf( (fileStat.st_mode & S_IRUSR) ? "r" : "-");
+    printf( (fileStat.st_mode & S_IWUSR) ? "w" : "-");
+    printf( (fileStat.st_mode & S_IXUSR) ? "x" : "-");
+    printf( (fileStat.st_mode & S_IRGRP) ? "r" : "-");
+    printf( (fileStat.st_mode & S_IWGRP) ? "w" : "-");
+    printf( (fileStat.st_mode & S_IXGRP) ? "x" : "-");
+    printf( (fileStat.st_mode & S_IROTH) ? "r" : "-");
+    printf( (fileStat.st_mode & S_IWOTH) ? "w" : "-");
+    printf( (fileStat.st_mode & S_IXOTH) ? "x" : "-");
+}
 #endif
 
