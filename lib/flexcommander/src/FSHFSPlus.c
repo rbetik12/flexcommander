@@ -11,8 +11,10 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <stdlib.h>
 
 #define DATE_BUFFER_SIZE 64
+#define RW_BLOCK_SIZE 4096
 
 int SetupLoopDevice(char* deviceName, FILE* file);
 
@@ -194,6 +196,45 @@ void PrintMode(struct stat fileStat) {
     printf( (fileStat.st_mode & S_IROTH) ? "r" : "-");
     printf( (fileStat.st_mode & S_IWOTH) ? "w" : "-");
     printf( (fileStat.st_mode & S_IXOTH) ? "x" : "-");
+}
+
+int FlexCopyFile(const char* src, const char* dest) {
+    FILE *srcFile = fopen(src, "rb");
+    if (srcFile == NULL) {
+        fprintf(stderr, "Can't open src file!\n");
+        return -1;
+    }
+
+    FILE *destFile = fopen(dest, "wb");
+    if (destFile == NULL) {
+        fprintf(stderr, "Can't open dest file!\n");
+        return -1;
+    }
+
+    char* buffer = (char*) malloc(sizeof(char) * RW_BLOCK_SIZE);
+    size_t bytesCopied = 0;
+    while ((bytesCopied = fread(buffer, sizeof(char), RW_BLOCK_SIZE, srcFile)) == RW_BLOCK_SIZE) {
+        if (fwrite(buffer, sizeof(char), RW_BLOCK_SIZE, destFile) != RW_BLOCK_SIZE) {
+            printf("Can't write bytes to file!\n");
+        }
+    }
+
+    if (ferror(srcFile)) {
+        perror("Can't read from file!\n");
+        fclose(srcFile);
+        fclose(destFile);
+        return -1;
+    }
+
+    if (feof(srcFile)) {
+        if (fwrite(buffer, sizeof(char), bytesCopied, destFile) != bytesCopied) {
+            printf("Can't write bytes to file!\n");
+        }
+    }
+
+    fclose(srcFile);
+    fclose(destFile);
+    return 0;
 }
 #endif
 
