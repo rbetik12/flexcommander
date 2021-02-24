@@ -2,7 +2,6 @@
 
 int main() {
     FlexCommanderFS fs;
-    FlexGetDirElements("/mnt/temp", &fs);
-    FlexCopyFile("/mnt/temp/kek.txt", "/home/vitaliy/kek.txt");
+    FlexOpen("/home/vitaliy/itmo/spo/lab1/res/fs/hfs.img", &fs);
     return 0;
 }

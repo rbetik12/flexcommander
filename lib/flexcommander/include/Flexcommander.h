@@ -9,7 +9,7 @@ typedef struct FlexCommanderProbeInfo {
 
 typedef struct FlexCommanderFS {
     FILE *file;
-    const char* mountedDirName;
+    uint32_t blockSize;
 } FlexCommanderFS;
 
 //Functions for block device probing
@@ -18,7 +18,4 @@ int ProbeDevices(FlexCommanderProbeInfo* info);
 int IterateDevices(FlexCommanderProbeInfo* info);
 
 //Functions for filesystem interaction
-int FlexOpenAndMount(const char * path, FlexCommanderFS* fs);
-int FlexVerify(FlexCommanderFS* fs);
-int FlexGetDirElements(const char* path, FlexCommanderFS* fs);
-int FlexCopyFile(const char* src, const char* dest);
+int FlexOpen(const char * path, FlexCommanderFS* fs);
