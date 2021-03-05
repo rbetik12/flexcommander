@@ -20,7 +20,7 @@ enum {
     kBTVariableIndexKeysMask  = 0x00000004
 };
 
-struct BTNodeDescriptor {
+struct __attribute__((__packed__)) BTNodeDescriptor {
     UInt32    fLink;
     UInt32    bLink;
     SInt8     kind;
@@ -48,4 +48,6 @@ struct __attribute__((__packed__)) BTHeaderRec {
     UInt32    reserved3[16];
 };
 typedef struct BTHeaderRec BTHeaderRec;
+
+void PrintBTreeHeader(BTHeaderRec header);
 

@@ -82,14 +82,15 @@ int Verify(FlexCommanderFS* fs) {
 }
 
 int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs) {
+    BTNodeDescriptor btreeHeaderDescr;
+    BTHeaderRec btreeHeader;
+
+    FlexFSeek(fs->file, pos, SEEK_SET);
+    FlexRead(&btreeHeaderDescr, sizeof(BTNodeDescriptor), 1, fs->file);
+    FlexRead(&btreeHeader, sizeof(BTHeaderRec), 1, fs->file);
+
     printf("\nCatalog file btree header:\n");
-    printf("Btree depth: %d\n", htonl(btreeHeader.treeDepth));
-    printf("Btree node size: %d\n", htonl(btreeHeader.nodeSize));
-    printf("Btree clump size: %d\n", htonl(btreeHeader.clumpSize));
-    printf("Catalog Btree first leaf: %d\n", htonl(btreeHeader.firstLeafNode));
-    printf("Catalog Btree free nodes: %d\n", htonl(btreeHeader.freeNodes));
-    printf("Catalog Btree total nodes: %d\n", htonl(btreeHeader.totalNodes));
-    printf("Catalog Btree root node: %d\n", htonl(btreeHeader.rootNode));
+    PrintBTreeHeader(btreeHeader);
 
     return 0;
 }
