@@ -2,28 +2,39 @@
 
 #include <Flexcommander.h>
 #include <HFSPlus.h>
-#include <errno.h>
-#include <sys/mount.h>
-#include <string.h>
 #include <fcntl.h>
-#include <linux/loop.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <stdlib.h>
 #include <arpa/inet.h>
 #include <byteswap.h>
 #include <HFSPlusBTree.h>
 #include <FlexIO.h>
 
-#define DATE_BUFFER_SIZE 64
-#define RW_BLOCK_SIZE 4096
-#define BTREE_NODE_SIZE 4096
-
 int Verify(FlexCommanderFS* fs);
+
 int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs);
 
-int FlexOpen(const char * path, FlexCommanderFS* fs) {
+uint64_t GetCatalogueFileLocation(HFSPlusVolumeHeader header, FlexCommanderFS* fs) {
+    uint64_t catalogFirstBlockNum = htonl(header.catalogFile.extents[0].startBlock);
+    uint64_t catalogFileLocation = catalogFirstBlockNum * fs->blockSize;
+    printf("Catalog file location: %lx\n", catalogFileLocation);
+    printf("Catalog file first block: %lu\n", catalogFirstBlockNum);
+    return catalogFileLocation;
+}
+
+void PrintVolumeHeader(HFSPlusVolumeHeader header, FlexCommanderFS* fs) {
+    printf("Volume info:\n");
+    printf("Total files: %d\n", htonl(header.fileCount));
+    printf("Total folders: %d\n", htonl(header.folderCount));
+    printf("Block size: %d\n", fs->blockSize);
+    printf("Total blocks: %d\n", htonl(header.totalBlocks));
+    printf("Next free block: %d\n", htonl(header.nextAllocation));
+
+    printf("\nCatalog file info:\n");
+    printf("Catalog file logical size: %lu\n", bswap_64(header.catalogFile.logicalSize));
+    printf("Catalog file clump size: %u\n", htonl(header.catalogFile.clumpSize));
+    printf("Catalog file total blocks: %u\n", htonl(header.catalogFile.totalBlocks));
+}
+
+int FlexOpen(const char* path, FlexCommanderFS* fs) {
     FILE* dev = fopen(path, "rb");
 
     if (!dev) {
@@ -59,21 +70,9 @@ int Verify(FlexCommanderFS* fs) {
 
     if (header.signature == HFS_SIGNATURE) {
         fs->blockSize = htonl(header.blockSize);
-        printf("Total files: %d\n", htonl(header.fileCount));
-        printf("Total folders: %d\n", htonl(header.folderCount));
-        printf("Block size: %d\n", fs->blockSize);
-        printf("Total blocks: %d\n", htonl(header.totalBlocks));
-        printf("Next free block: %d\n", htonl(header.nextAllocation));
-
-        printf("\nCatalog file:\n");
-        printf("Catalog file logical size: %lu\n", bswap_64(header.catalogFile.logicalSize));
-        printf("Catalog file clump size: %u\n", htonl(header.catalogFile.clumpSize));
-        printf("Catalog file total blocks: %u\n", htonl(header.catalogFile.totalBlocks));
-        uint64_t catalogFirstBlockNum = htonl(header.catalogFile.extents[0].startBlock);
-        uint64_t catalogFileLocation =  catalogFirstBlockNum * fs->blockSize;
-        printf("Catalog file location: %lx\n", catalogFileLocation);
-        printf("Catalog file first block: %lu\n", catalogFirstBlockNum);
-        ReadBtreeHeader(catalogFileLocation, fs);
+        PrintVolumeHeader(header, fs);
+        uint64_t catalogueFileLoc = GetCatalogueFileLocation(header, fs);
+        ReadBtreeHeader(catalogueFileLoc, fs);
         return 0;
     } else {
         fprintf(stderr, "Provided file is not a HFS volume!\n");
@@ -94,5 +93,6 @@ int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs) {
 
     return 0;
 }
+
 #endif
 
