@@ -50,4 +50,5 @@ struct __attribute__((__packed__)) BTHeaderRec {
 typedef struct BTHeaderRec BTHeaderRec;
 
 void PrintBTreeHeader(BTHeaderRec header);
+void PrintBTreeNodeDescriptor(BTNodeDescriptor descriptor);
 

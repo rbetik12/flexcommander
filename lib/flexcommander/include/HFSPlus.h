@@ -101,3 +101,4 @@ struct HFSUniStr255 {
 };
 typedef struct HFSUniStr255 HFSUniStr255;
 typedef const  HFSUniStr255 *ConstHFSUniStr255Param;
+typedef UInt32 HFSCatalogNodeID;

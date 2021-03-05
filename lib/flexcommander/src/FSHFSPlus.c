@@ -8,6 +8,8 @@
 #include <HFSPlusBTree.h>
 #include <FlexIO.h>
 
+#define USER_DATA_RECORD_SIZE 128
+
 int Verify(FlexCommanderFS* fs);
 
 int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs);
@@ -88,7 +90,9 @@ int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs) {
     FlexRead(&btreeHeaderDescr, sizeof(BTNodeDescriptor), 1, fs->file);
     FlexRead(&btreeHeader, sizeof(BTHeaderRec), 1, fs->file);
 
-    printf("\nCatalog file btree header:\n");
+    printf("\nCatalog file btree header descriptor:\n");
+    PrintBTreeNodeDescriptor(btreeHeaderDescr);
+    printf("Catalog file btree header:\n");
     PrintBTreeHeader(btreeHeader);
 
     return 0;

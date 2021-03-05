@@ -17,3 +17,11 @@ void PrintBTreeHeader(BTHeaderRec header) {
     printf("Btree type: %d\n", header.btreeType);
     printf("Btree key compare type: 0x%x\n", header.keyCompareType);
 }
+
+void PrintBTreeNodeDescriptor(BTNodeDescriptor descriptor) {
+    printf("Next node num: %d\n", bswap_32(descriptor.fLink));
+    printf("Previous node num: %d\n", bswap_32(descriptor.bLink));
+    printf("Node kind: %d\n", descriptor.kind);
+    printf("Node level: %d\n", descriptor.height);
+    printf("Number of records: %d\n", bswap_16(descriptor.numRecords));
+}
