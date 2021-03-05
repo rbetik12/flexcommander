@@ -7,7 +7,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <linux/loop.h>
-#include <zconf.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -15,9 +14,11 @@
 #include <arpa/inet.h>
 #include <byteswap.h>
 #include <HFSPlusBTree.h>
+#include <FlexIO.h>
 
 #define DATE_BUFFER_SIZE 64
 #define RW_BLOCK_SIZE 4096
+#define BTREE_NODE_SIZE 4096
 
 int Verify(FlexCommanderFS* fs);
 int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs);
@@ -39,6 +40,7 @@ int FlexOpen(const char * path, FlexCommanderFS* fs) {
 }
 
 int Verify(FlexCommanderFS* fs) {
+
     HFSPlusVolumeHeader header;
 
     if (fseek(fs->file, HFS_START_OFFSET, SEEK_SET)) {
@@ -68,7 +70,7 @@ int Verify(FlexCommanderFS* fs) {
         printf("Catalog file clump size: %u\n", htonl(header.catalogFile.clumpSize));
         printf("Catalog file total blocks: %u\n", htonl(header.catalogFile.totalBlocks));
         uint64_t catalogFirstBlockNum = htonl(header.catalogFile.extents[0].startBlock);
-        uint64_t catalogFileLocation =  catalogFirstBlockNum * fs->blockSize + 1024;
+        uint64_t catalogFileLocation =  catalogFirstBlockNum * fs->blockSize;
         printf("Catalog file location: %lx\n", catalogFileLocation);
         printf("Catalog file first block: %lu\n", catalogFirstBlockNum);
         ReadBtreeHeader(catalogFileLocation, fs);
@@ -80,26 +82,14 @@ int Verify(FlexCommanderFS* fs) {
 }
 
 int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs) {
-    if (fseek(fs->file, HFS_START_OFFSET + pos, SEEK_SET)) {
-        fprintf(stderr, "Can't set 1024 bytes offset!\n");
-        return -1;
-    }
-
-    BTHeaderRec btreeHeader;
-
-    if (fread(&btreeHeader, sizeof(struct BTHeaderRec), 1, fs->file) != 1) {
-        if (feof(fs->file)) {
-            fprintf(stderr, "Unexpected EOF!\n");
-        } else {
-            fprintf(stderr, "Can't read!\n");
-        }
-        return -1;
-    }
-
     printf("\nCatalog file btree header:\n");
-    printf("Btree depth: %d\n", btreeHeader.treeDepth);
-    printf("Btree node size: %d\n", btreeHeader.nodeSize);
-//    printf("Btree node: \n", btreeHeader.)
+    printf("Btree depth: %d\n", htonl(btreeHeader.treeDepth));
+    printf("Btree node size: %d\n", htonl(btreeHeader.nodeSize));
+    printf("Btree clump size: %d\n", htonl(btreeHeader.clumpSize));
+    printf("Catalog Btree first leaf: %d\n", htonl(btreeHeader.firstLeafNode));
+    printf("Catalog Btree free nodes: %d\n", htonl(btreeHeader.freeNodes));
+    printf("Catalog Btree total nodes: %d\n", htonl(btreeHeader.totalNodes));
+    printf("Catalog Btree root node: %d\n", htonl(btreeHeader.rootNode));
 
     return 0;
 }

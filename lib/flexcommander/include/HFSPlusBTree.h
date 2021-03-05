@@ -30,7 +30,7 @@ struct BTNodeDescriptor {
 };
 typedef struct BTNodeDescriptor BTNodeDescriptor;
 
-struct BTHeaderRec {
+struct __attribute__((__packed__)) BTHeaderRec {
     UInt16    treeDepth;
     UInt32    rootNode;
     UInt32    leafRecords;
@@ -48,3 +48,4 @@ struct BTHeaderRec {
     UInt32    reserved3[16];
 };
 typedef struct BTHeaderRec BTHeaderRec;
+
