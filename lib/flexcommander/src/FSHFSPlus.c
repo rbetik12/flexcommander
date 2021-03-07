@@ -73,7 +73,7 @@ int Verify(FlexCommanderFS* fs) {
 
     if (header.signature == HFS_SIGNATURE) {
         fs->blockSize = htonl(header.blockSize);
-        PrintVolumeHeader(header, fs);
+//        PrintVolumeHeader(header, fs);
         uint64_t catalogueFileLoc = GetCatalogueFileLocation(header, fs);
         ReadBtreeHeader(catalogueFileLoc, fs);
         return 0;
@@ -93,8 +93,8 @@ int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs) {
     ConvertBTreeHeader(&btreeHeader);
     ConvertBTreeNodeDescriptor(&btreeHeaderDescr);
 
-    printf("\nCatalog file btree header descriptor:\n");
-    PrintBTreeNodeDescriptor(btreeHeaderDescr);
+//    printf("\nCatalog file btree header descriptor:\n");
+//    PrintBTreeNodeDescriptor(btreeHeaderDescr);
     printf("Catalog file btree header:\n");
     PrintBTreeHeader(btreeHeader);
 

@@ -2,7 +2,7 @@
 
 #include "HFSPlus.h"
 
-struct HFSPlusCatalogKey {
+struct __attribute__((__packed__)) HFSPlusCatalogKey {
     UInt16              keyLength;
     HFSCatalogNodeID    parentID;
     HFSUniStr255        nodeName;
@@ -10,13 +10,13 @@ struct HFSPlusCatalogKey {
 typedef struct HFSPlusCatalogKey HFSPlusCatalogKey;
 
 enum HFSDataRecordType {
-    kHFSPlusFolderRecord        = 0x0001,
-    kHFSPlusFileRecord          = 0x0002,
-    kHFSPlusFolderThreadRecord  = 0x0003,
-    kHFSPlusFileThreadRecord    = 0x0004
+    FolderRecord        = 0x0001,
+    FileRecord          = 0x0002,
+    FolderThreadRecord  = 0x0003,
+    FileThreadRecord    = 0x0004
 };
 
-struct HFSPlusBSDInfo {
+struct __attribute__((__packed__)) HFSPlusBSDInfo {
     UInt32  ownerID;
     UInt32  groupID;
     UInt8   adminFlags;
@@ -30,7 +30,7 @@ struct HFSPlusBSDInfo {
 };
 typedef struct HFSPlusBSDInfo HFSPlusBSDInfo;
 
-struct Rect {
+struct __attribute__((__packed__)) Rect {
     SInt16              top;
     SInt16              left;
     SInt16              bottom;
@@ -38,13 +38,13 @@ struct Rect {
 };
 typedef struct Rect   Rect;
 
-struct Point {
+struct __attribute__((__packed__)) Point {
     SInt16              v;
     SInt16              h;
 };
 typedef struct Point  Point;
 
-struct FolderInfo {
+struct __attribute__((__packed__)) FolderInfo {
     Rect      windowBounds;       /* The position and dimension of the */
     /* folder's window */
     UInt16    finderFlags;
@@ -55,7 +55,7 @@ struct FolderInfo {
 };
 typedef struct FolderInfo  FolderInfo;
 
-struct ExtendedFolderInfo {
+struct __attribute__((__packed__)) ExtendedFolderInfo {
     Point     scrollPosition;     /* Scroll position (for icon views) */
     SInt32    reserved1;
     UInt16    extendedFinderFlags;
@@ -64,7 +64,7 @@ struct ExtendedFolderInfo {
 };
 typedef struct ExtendedFolderInfo   ExtendedFolderInfo;
 
-struct HFSPlusCatalogFolder {
+struct __attribute__((__packed__)) HFSPlusCatalogFolder {
     SInt16              recordType;
     UInt16              flags;
     UInt32              valence;
@@ -81,3 +81,6 @@ struct HFSPlusCatalogFolder {
     UInt32              reserved;
 };
 typedef struct HFSPlusCatalogFolder HFSPlusCatalogFolder;
+
+void PrintCatalogKey(HFSPlusCatalogKey key);
+void PrintCatalogFolder(HFSPlusCatalogFolder folder);
