@@ -10,8 +10,23 @@ void ParseFolderRecord(HFSPlusCatalogFolder *folder) {
     PrintCatalogFolder(*folder);
 }
 
-void ParseFileRecord(HFSPlusCatalogFile *file) {
+void ParseFileRecord(HFSPlusCatalogFile *file, FlexCommanderFS fs) {
+    char* dataBlock = calloc(fs.blockSize, sizeof(char));
     PrintCatalogFile(*file);
+    printf("File data:\n");
+    for (int i = 0; i < 8; i++) {
+        HFSPlusExtentRecord extent = file->dataFork.extents[i];
+        if (extent.blockCount != 0 && extent.startBlock != 0) {
+            uint64_t blockAddress = extent.startBlock * fs.blockSize;
+            FlexFSeek(fs.file, blockAddress, SEEK_SET);
+            FlexRead(dataBlock, fs.blockSize, 1, fs.file);
+            for (int j = 0; j < fs.blockSize; j++) {
+                printf("%c", dataBlock[j]);
+            }
+            printf("\n");
+        }
+    }
+    free(dataBlock);
 }
 
 void ParseCatalogThread(HFSPlusCatalogThread *catalogThread) {
@@ -57,7 +72,7 @@ void ParseNode(uint64_t nodeBlock, BTHeaderRec btreeHeader, FlexCommanderFS fs) 
             case FileRecord:
                 catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile, (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
                 ConvertCatalogFile(&catalogFile);
-                ParseFileRecord(&catalogFile);
+                ParseFileRecord(&catalogFile, fs);
                 break;
             case FileThreadRecord:
             case FolderThreadRecord:
@@ -71,4 +86,6 @@ void ParseNode(uint64_t nodeBlock, BTHeaderRec btreeHeader, FlexCommanderFS fs) 
         }
         printf("==========================================\n");
     }
+
+    free(rawNode);
 }

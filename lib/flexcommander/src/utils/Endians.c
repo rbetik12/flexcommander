@@ -53,6 +53,14 @@ void ConvertCatalogFile(HFSPlusCatalogFile* file) {
     file->accessDate = bswap_32(file->accessDate);
     file->backupDate = bswap_32(file->backupDate);
     file->textEncoding = bswap_32(file->textEncoding);
+
+    file->dataFork.clumpSize = bswap_32(file->dataFork.clumpSize);
+    file->dataFork.logicalSize = bswap_64(file->dataFork.logicalSize);
+    file->dataFork.totalBlocks = bswap_32(file->dataFork.totalBlocks);
+    for (int i = 0; i < 8; i++) {
+        file->dataFork.extents[i].blockCount = bswap_32(file->dataFork.extents[i].blockCount);
+        file->dataFork.extents[i].startBlock = bswap_32(file->dataFork.extents[i].startBlock);
+    }
 }
 
 void ConvertCatalogThread(HFSPlusCatalogThread* catalogThread) {
