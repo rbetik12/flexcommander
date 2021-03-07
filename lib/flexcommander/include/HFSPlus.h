@@ -10,8 +10,10 @@ typedef uint32_t UInt32;
 typedef uint64_t UInt64;
 typedef uint32_t HFSCatalogNodeID;
 typedef uint16_t UniChar;
-typedef uint8_t UInt8;
-typedef char    SInt8;
+typedef uint8_t  UInt8;
+typedef char     SInt8;
+typedef short    SInt16;
+typedef int      SInt32;
 
 #define S_ISUID 0004000     /* set user id on execution */
 #define S_ISGID 0002000     /* set group id on execution */

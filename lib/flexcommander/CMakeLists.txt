@@ -10,4 +10,4 @@ add_library(flexcommander SHARED
         include/FlexIO.h
         src/FlexIO.c
         include/Flexcommander.h src/Init.c src/Devices.c include/HFSPlus.h src/FSHFSPlus.c
-        include/HFSPlusBTree.h src/BTreePrint.c)
+        include/HFSPlusBTree.h src/BTreePrint.c include/HFSCatalog.h src/BTree.c src/utils/Endians.h src/utils/Endians.c)

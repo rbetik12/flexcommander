@@ -1,5 +1,6 @@
 #pragma once
 #include "HFSPlus.h"
+#include "Flexcommander.h"
 
 enum {
     kBTLeafNode       = -1,
@@ -51,4 +52,5 @@ typedef struct BTHeaderRec BTHeaderRec;
 
 void PrintBTreeHeader(BTHeaderRec header);
 void PrintBTreeNodeDescriptor(BTNodeDescriptor descriptor);
+void ParseNode(uint64_t nodeBlock, BTHeaderRec btreeHeader, FlexCommanderFS fs);
 
