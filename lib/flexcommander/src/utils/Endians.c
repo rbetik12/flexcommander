@@ -42,3 +42,24 @@ void ConvertCatalogFolder(HFSPlusCatalogFolder* folder) {
     folder->backupDate = bswap_32(folder->backupDate);
     folder->textEncoding = bswap_32(folder->textEncoding);
 }
+
+void ConvertCatalogFile(HFSPlusCatalogFile* file) {
+    file->recordType = bswap_16(file->recordType);
+    file->flags = bswap_16(file->flags);
+    file->fileID = bswap_32(file->fileID);
+    file->createDate = bswap_32(file->createDate);
+    file->contentModDate = bswap_32(file->contentModDate);
+    file->attributeModDate = bswap_32(file->attributeModDate);
+    file->accessDate = bswap_32(file->accessDate);
+    file->backupDate = bswap_32(file->backupDate);
+    file->textEncoding = bswap_32(file->textEncoding);
+}
+
+void ConvertCatalogThread(HFSPlusCatalogThread* catalogThread) {
+    catalogThread->recordType = bswap_16(catalogThread->recordType);
+    catalogThread->parentID = bswap_32(catalogThread->parentID);
+    catalogThread->nodeName.length = bswap_16(catalogThread->nodeName.length);
+    for (int i = 0; i < catalogThread->nodeName.length; i++) {
+        catalogThread->nodeName.unicode[i] = bswap_16(catalogThread->nodeName.unicode[i]);
+    }
+}

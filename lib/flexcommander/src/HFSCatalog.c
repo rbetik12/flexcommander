@@ -6,6 +6,7 @@
 
 void PrintCatalogKey(HFSPlusCatalogKey key) {
     setlocale(LC_CTYPE, "");
+    printf("Key info:\n");
     printf("Key length: %d\n", key.keyLength);
     printf("Parent ID: %d\n", key.parentID);
     printf("Node name length: %d\n", key.nodeName.length);
@@ -20,4 +21,20 @@ void PrintCatalogFolder(HFSPlusCatalogFolder folder) {
     printf("Folder info:\n");
     printf("Valence: %d\n", folder.valence);
     printf("Folder ID: %d\n", folder.folderID);
+}
+
+void PrintCatalogFile(HFSPlusCatalogFile file) {
+    printf("File info:\n");
+    printf("File ID: %d\n", file.fileID);
+}
+
+void PrintCatalogThread(HFSPlusCatalogThread thread) {
+    printf("Catalog thread info:\n");
+    printf("Parent ID: %d\n", thread.parentID);
+    printf("Thread name length: %d\n", thread.nodeName.length);
+    printf("Node name: ");
+    for (int i = 0; i < thread.nodeName.length; i++) {
+        printf("%lc", thread.nodeName.unicode[i]);
+    }
+    printf("\n");
 }

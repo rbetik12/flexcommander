@@ -14,6 +14,8 @@ typedef uint8_t  UInt8;
 typedef char     SInt8;
 typedef short    SInt16;
 typedef int      SInt32;
+typedef UInt32        FourCharCode;
+typedef FourCharCode  OSType;
 
 #define S_ISUID 0004000     /* set user id on execution */
 #define S_ISGID 0002000     /* set group id on execution */

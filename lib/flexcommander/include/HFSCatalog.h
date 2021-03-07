@@ -82,5 +82,53 @@ struct __attribute__((__packed__)) HFSPlusCatalogFolder {
 };
 typedef struct HFSPlusCatalogFolder HFSPlusCatalogFolder;
 
+struct FileInfo {
+    OSType    fileType;           /* The type of the file */
+    OSType    fileCreator;        /* The file's creator */
+    UInt16    finderFlags;
+    Point     location;           /* File's location in the folder. */
+    UInt16    reservedField;
+};
+typedef struct FileInfo   FileInfo;
+
+struct ExtendedFileInfo {
+    SInt16    reserved1[4];
+    UInt16    extendedFinderFlags;
+    SInt16    reserved2;
+    SInt32    putAwayFolderID;
+};
+typedef struct ExtendedFileInfo   ExtendedFileInfo;
+
+struct __attribute__((__packed__)) HFSPlusCatalogFile {
+    SInt16              recordType;
+    UInt16              flags;
+    UInt32              reserved1;
+    HFSCatalogNodeID    fileID;
+    UInt32              createDate;
+    UInt32              contentModDate;
+    UInt32              attributeModDate;
+    UInt32              accessDate;
+    UInt32              backupDate;
+    HFSPlusBSDInfo      permissions;
+    FileInfo            userInfo;
+    ExtendedFileInfo    finderInfo;
+    UInt32              textEncoding;
+    UInt32              reserved2;
+
+    HFSPlusForkData     dataFork;
+    HFSPlusForkData     resourceFork;
+};
+typedef struct HFSPlusCatalogFile HFSPlusCatalogFile;
+
+struct __attribute__((__packed__)) HFSPlusCatalogThread {
+    SInt16              recordType;
+    SInt16              reserved;
+    HFSCatalogNodeID    parentID;
+    HFSUniStr255        nodeName;
+};
+typedef struct HFSPlusCatalogThread HFSPlusCatalogThread;
+
 void PrintCatalogKey(HFSPlusCatalogKey key);
 void PrintCatalogFolder(HFSPlusCatalogFolder folder);
+void PrintCatalogFile(HFSPlusCatalogFile file);
+void PrintCatalogThread(HFSPlusCatalogThread thread);
