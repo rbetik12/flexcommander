@@ -30,6 +30,18 @@ void PrintCatalogFile(HFSPlusCatalogFile file) {
 
 void PrintCatalogThread(HFSPlusCatalogThread thread) {
     printf("Catalog thread info:\n");
+    printf("Thread type: ");
+    switch (thread.recordType) {
+        case FolderThreadRecord:
+            printf("folder\n");
+            break;
+        case FileThreadRecord:
+            printf("file\n");
+            break;
+        default:
+            printf("unknown\n");
+            break;
+    }
     printf("Parent ID: %d\n", thread.parentID);
     printf("Thread name length: %d\n", thread.nodeName.length);
     printf("Node name: ");
