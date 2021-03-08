@@ -20,16 +20,16 @@ void PrintBTreeNodeDescriptor(BTNodeDescriptor descriptor) {
     printf("Next node num: %d\n", descriptor.fLink);
     printf("Previous node num: %d\n", descriptor.bLink);
     switch (descriptor.kind) {
-        case kBTLeafNode:
+        case LeafNode:
             printf("Node kind: leaf\n");
             break;
-        case kBTIndexNode:
+        case IndexNode:
             printf("Node kind: index\n");
             break;
-        case kBTHeaderNode:
+        case HeaderNode:
             printf("Node kind: header\n");
             break;
-        case kBTMapNode:
+        case MapNode:
             printf("Node kind: map\n");
             break;
         default:

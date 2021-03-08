@@ -4,6 +4,7 @@
 #include <HFSCatalog.h>
 #include "utils/Endians.h"
 
+// Use only with structures. Idk why, but it doesn't work with 4 byte values.
 #define CAST_PTR_TO_TYPE(type, ptr) *(type*)ptr
 
 void ParseFolderRecord(HFSPlusCatalogFolder *folder) {
@@ -88,4 +89,44 @@ void ParseNode(uint64_t nodeBlock, BTHeaderRec btreeHeader, FlexCommanderFS fs) 
     }
 
     free(rawNode);
+}
+
+void ParseIndexNode(const char * rawNode, BTNodeDescriptor descriptor, BTHeaderRec btreeHeader) {
+    uint16_t recordAddress[descriptor.numRecords];
+    int j = 0;
+    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
+        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t)rawNode[i];
+        j += 1;
+    }
+
+    for (int i = 0; i < descriptor.numRecords; i++) {
+        BTCatalogIndexNode node = CAST_PTR_TO_TYPE(BTCatalogIndexNode, (rawNode + recordAddress[i]));
+        ConvertCatalogIndexNode(&node);
+        uint64_t offset = recordAddress[i] + node.key.keyLength + sizeof(node.key.keyLength);
+        uint32_t nextNode = rawNode[offset] << 24 | rawNode[offset + 1] << 16 | rawNode[offset + 2] << 8 | rawNode[offset + 3];
+        node.nextNode = nextNode;
+        PrintCatalogIndexNode(node);
+    }
+}
+
+void ParseRootNode(uint64_t block, BTHeaderRec btHeader, FlexCommanderFS fs) {
+    uint64_t nodeBlockAddress = block * fs.blockSize;
+    FlexFSeek(fs.file, nodeBlockAddress, SEEK_SET);
+
+    char* rawNode = calloc(btHeader.nodeSize, sizeof(char));
+
+    FlexRead(rawNode, btHeader.nodeSize, 1, fs.file);
+    BTNodeDescriptor nodeDescr = CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode);
+    ConvertBTreeNodeDescriptor(&nodeDescr);
+
+    switch (nodeDescr.kind) {
+        case IndexNode:
+            ParseIndexNode(rawNode, nodeDescr, btHeader);
+            break;
+        case LeafNode:
+            break;
+        default:
+            fputs("Unexpected node type!\n", stderr);
+            break;
+    }
 }

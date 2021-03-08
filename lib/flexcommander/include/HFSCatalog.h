@@ -128,7 +128,14 @@ struct __attribute__((__packed__)) HFSPlusCatalogThread {
 };
 typedef struct HFSPlusCatalogThread HFSPlusCatalogThread;
 
+struct __attribute__((__packed__)) BTCatalogIndexNode {
+    HFSPlusCatalogKey key;
+    UInt32 nextNode;
+};
+typedef struct BTCatalogIndexNode BTCatalogIndexNode;
+
 void PrintCatalogKey(HFSPlusCatalogKey key);
 void PrintCatalogFolder(HFSPlusCatalogFolder folder);
 void PrintCatalogFile(HFSPlusCatalogFile file);
 void PrintCatalogThread(HFSPlusCatalogThread thread);
+void PrintCatalogIndexNode(BTCatalogIndexNode node);

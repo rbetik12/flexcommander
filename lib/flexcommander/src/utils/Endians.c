@@ -71,3 +71,8 @@ void ConvertCatalogThread(HFSPlusCatalogThread* catalogThread) {
         catalogThread->nodeName.unicode[i] = bswap_16(catalogThread->nodeName.unicode[i]);
     }
 }
+
+void ConvertCatalogIndexNode(BTCatalogIndexNode *indexNode) {
+    ConvertCatalogKey(&indexNode->key);
+    indexNode->nextNode = bswap_32(indexNode->nextNode);
+}

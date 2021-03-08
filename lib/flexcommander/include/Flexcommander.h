@@ -10,6 +10,7 @@ typedef struct FlexCommanderProbeInfo {
 typedef struct FlexCommanderFS {
     FILE *file;
     uint32_t blockSize;
+    uint64_t catalogFileBlock;
 } FlexCommanderFS;
 
 //Functions for block device probing
@@ -19,3 +20,4 @@ int IterateDevices(FlexCommanderProbeInfo* info);
 
 //Functions for filesystem interaction
 int FlexOpen(const char * path, FlexCommanderFS* fs);
+int FlexListDirContent(const char* path, FlexCommanderFS* fs);

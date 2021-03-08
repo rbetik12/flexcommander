@@ -50,3 +50,8 @@ void PrintCatalogThread(HFSPlusCatalogThread thread) {
     }
     printf("\n");
 }
+
+void PrintCatalogIndexNode(BTCatalogIndexNode node) {
+    PrintCatalogKey(node.key);
+    printf("Index: %d\n", node.nextNode);
+}
