@@ -1,5 +1,6 @@
 #pragma once
 
+#include <List.h>
 #include "HFSPlus.h"
 #include "Flexcommander.h"
 
@@ -55,7 +56,7 @@ void PrintBTreeHeader(BTHeaderRec header);
 
 void PrintBTreeNodeDescriptor(BTNodeDescriptor descriptor);
 
-void ParseNode(uint64_t nodeBlock, BTHeaderRec btreeHeader, FlexCommanderFS fs);
+FSRecordListNode* ParseLeafNode(uint64_t nodeBlock, uint32_t parentCNID, BTHeaderRec btreeHeader, FlexCommanderFS fs);
 
-void ParseRootNode(uint64_t block, BTHeaderRec btHeader, FlexCommanderFS fs);
+long long GetRecordBlockNumByCNID(uint64_t block, uint32_t folderCNID, BTHeaderRec btHeader, FlexCommanderFS fs);
 

@@ -102,34 +102,43 @@ int Verify(FlexCommanderFS* fs) {
     }
 }
 
-int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs) {
-    BTNodeDescriptor btreeHeaderDescr;
-    BTHeaderRec btreeHeader;
-
-    FlexFSeek(fs->file, pos, SEEK_SET);
-    FlexRead(&btreeHeaderDescr, sizeof(BTNodeDescriptor), 1, fs->file);
-    FlexRead(&btreeHeader, sizeof(BTHeaderRec), 1, fs->file);
-    ConvertBTreeHeader(&btreeHeader);
-    ConvertBTreeNodeDescriptor(&btreeHeaderDescr);
-
-//    ParseNode(btreeHeader.rootNode + pos / fs->blockSize, btreeHeader, *fs);
-    return 0;
-}
-
 int FlexListDirContent(const char* path, FlexCommanderFS* fs) {
     char* pathCopy = malloc(strlen(path) + 1);
     strcpy(pathCopy, path);
     PathListNode* list = SplitPath(pathCopy);
     free(pathCopy);
 
-//    while (list) {
-//        printf("%s\n", list->token);
-//        list = list->next;
-//    }
-
     BTHeaderRec catalogFileHeader;
     ExtractCatalogBtreeHeader(fs->catalogFileBlock, &catalogFileHeader, fs);
-    ParseRootNode(catalogFileHeader.rootNode + fs->catalogFileBlock, catalogFileHeader, *fs);
+    uint64_t rootFolderLeafBlock;
+    while (list) {
+        if (strcmp(list->token, "/") == 0) {
+            rootFolderLeafBlock =
+                    GetRecordBlockNumByCNID(catalogFileHeader.rootNode + fs->catalogFileBlock, 1, catalogFileHeader, *fs) + fs->catalogFileBlock;
+            if (rootFolderLeafBlock == 0) {
+                ParseLeafNode(catalogFileHeader.rootNode + fs->catalogFileBlock, 2, catalogFileHeader, *fs);
+            }
+            else if (rootFolderLeafBlock == -1) {
+                fputs("Unexpected error! Didn't find a record.\n", stderr);
+            }
+            else {
+                FSRecordListNode *fsRecordList = ParseLeafNode(rootFolderLeafBlock, 2, catalogFileHeader, *fs);
+                while (fsRecordList) {
+                    if (fsRecordList->name.length) {
+                        for (int i = 0; i < fsRecordList->name.length; i++) {
+                            printf("%lc", fsRecordList->name.unicode[i]);
+                        }
+                        if (fsRecordList->type == FolderRecord) {
+                            printf("/");
+                        }
+                        printf("\n");
+                    }
+                    fsRecordList = fsRecordList->next;
+                }
+            }
+        }
+        list = list->next;
+    }
     return 0;
 }
 
