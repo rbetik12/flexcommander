@@ -108,13 +108,23 @@ int FlexListDirContent(const char *path, FlexCommanderFS *fs) {
     char *pathCopy = malloc(strlen(path) + 1);
     strcpy(pathCopy, path);
     PathListNode *list = SplitPath(pathCopy);
+    PathListNode *listStart = list;
     free(pathCopy);
 
     BTHeaderRec catalogFileHeader;
     ExtractCatalogBtreeHeader(fs->catalogFileBlock, &catalogFileHeader, fs);
 
+    uint32_t parentID = 2;
     while (list) {
-        printf("%s\n", list->token);
+        if (list->next == NULL) {
+            if (parentID == 0) {
+                printf("Path doesn't exist!\n");
+            }
+            break;
+        }
+        else {
+            parentID = FindIdOfFolder(list->next->token, parentID, catalogFileHeader, *fs);
+        }
         list = list->next;
     }
     return 0;

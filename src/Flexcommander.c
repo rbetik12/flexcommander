@@ -6,7 +6,7 @@ int main() {
         fprintf(stderr, "Error!\n");
     }
 
-    FlexListDirContent("/", &fs);
+    FlexListDirContent("/lol", &fs);
 
     return 0;
 }

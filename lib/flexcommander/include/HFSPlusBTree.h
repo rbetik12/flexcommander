@@ -53,10 +53,7 @@ struct __attribute__((__packed__)) BTHeaderRec {
 typedef struct BTHeaderRec BTHeaderRec;
 
 void PrintBTreeHeader(BTHeaderRec header);
-
 void PrintBTreeNodeDescriptor(BTNodeDescriptor descriptor);
-
-FSRecordListNode* ParseLeafNode(uint64_t nodeBlock, uint32_t parentCNID, BTHeaderRec btreeHeader, FlexCommanderFS fs);
-
-long long GetRecordBlockNumByCNID(uint64_t block, uint32_t folderCNID, BTHeaderRec btHeader, FlexCommanderFS fs);
+uint32_t ParseLeafNode(char* rawNode, const char* folderName, uint32_t folderParentId, BTHeaderRec btreeHeader, BTNodeDescriptor descriptor);
+uint32_t FindIdOfFolder(const char* folderName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs);
 
