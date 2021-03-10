@@ -56,4 +56,5 @@ void PrintBTreeHeader(BTHeaderRec header);
 void PrintBTreeNodeDescriptor(BTNodeDescriptor descriptor);
 uint32_t ParseLeafNode(char* rawNode, const char* folderName, uint32_t folderParentId, BTHeaderRec btreeHeader, BTNodeDescriptor descriptor);
 uint32_t FindIdOfFolder(const char* folderName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs);
+void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCommanderFS fs);
 

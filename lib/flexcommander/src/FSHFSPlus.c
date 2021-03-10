@@ -131,7 +131,7 @@ int FlexListDirContent(const char *path, FlexCommanderFS *fs) {
             if (parentID == 0) {
                 printf("Path doesn't exist!\n");
             }
-            printf("Folder ID: %d\n", parentID);
+            ListDirectoryContent(parentID, catalogFileHeader, *fs);
             break;
         }
         else {
