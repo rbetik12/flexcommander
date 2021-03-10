@@ -75,6 +75,8 @@ uint32_t FindIdOfFolder(const char* folderName, uint32_t folderParentId, BTHeade
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
     uint32_t id;
+    uint32_t extentNum = 0;
+    uint32_t blockNum = 0;
 
     FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
     FlexRead(rawNode, fs.blockSize, 1, fs.file);
@@ -89,10 +91,17 @@ uint32_t FindIdOfFolder(const char* folderName, uint32_t folderParentId, BTHeade
 
         id = ParseLeafNode(rawNode, folderName, folderParentId, catalogBTHeader, descriptor);
         if (id != 0) break;
+        if (blockNum == fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
+            blockNum = 0;
+            extentNum += 1;
+        }
+        nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock
+                + (descriptor.fLink % fs.volumeHeader.catalogFile.extents[extentNum].blockCount);
+        printf("%lu\n", nodeBlockNumber);
 
-        nodeBlockNumber = fs.catalogFileBlock + descriptor.fLink;
         FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
         FlexRead(rawNode, fs.blockSize, 1, fs.file);
+        blockNum += 1;
     }
 
     free(rawNode);

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <blkid/blkid.h>
+#include "HFSPlus.h"
 
 typedef struct FlexCommanderProbeInfo {
     blkid_cache blkCache;
@@ -11,6 +12,7 @@ typedef struct FlexCommanderFS {
     FILE *file;
     uint32_t blockSize;
     uint64_t catalogFileBlock;
+    HFSPlusVolumeHeader volumeHeader;
 } FlexCommanderFS;
 
 //Functions for block device probing

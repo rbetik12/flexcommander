@@ -97,6 +97,17 @@ int Verify(FlexCommanderFS *fs) {
     if (header.signature == HFS_SIGNATURE) {
         fs->blockSize = htonl(header.blockSize);
         fs->catalogFileBlock = bswap_32(header.catalogFile.extents[0].startBlock);
+        int extents = 0;
+        int totalBlocks = 0;
+        for (int i = 0; i < 8; i++) {
+            header.catalogFile.extents[i].startBlock = bswap_32(header.catalogFile.extents[i].startBlock);
+            header.catalogFile.extents[i].blockCount = bswap_32(header.catalogFile.extents[i].blockCount);
+            totalBlocks += header.catalogFile.extents[i].blockCount;
+            if (header.catalogFile.extents[i].startBlock != 0 && header.catalogFile.extents[i].blockCount != 0) {
+                extents += 1;
+            }
+        }
+        fs->volumeHeader = header;
         return 0;
     } else {
         fprintf(stderr, "Provided file is not a HFS volume!\n");
@@ -120,6 +131,7 @@ int FlexListDirContent(const char *path, FlexCommanderFS *fs) {
             if (parentID == 0) {
                 printf("Path doesn't exist!\n");
             }
+            printf("Folder ID: %d\n", parentID);
             break;
         }
         else {
