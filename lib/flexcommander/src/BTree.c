@@ -158,6 +158,9 @@ long long GetRecordBlockNumByCNID(uint64_t block, uint32_t cnid, BTHeaderRec btH
         case LeafNode:
             return 0;
             break;
+        case HeaderNode:
+
+            break;
         default:
             fputs("Unexpected node type!\n", stderr);
             break;

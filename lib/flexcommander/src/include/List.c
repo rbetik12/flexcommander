@@ -20,3 +20,31 @@ void FSRecordListAdd(FSRecordListNode** listHead, FSRecordListNode newNode) {
 
     last->next = newNodePtr;
 }
+
+void PathListAdd(PathListNode** listHead, PathListNode newNode) {
+    PathListNode * newNodePtr = malloc(sizeof(PathListNode));
+    PathListNode * last = *listHead;
+    newNodePtr->token = newNode.token;
+    newNodePtr->next = NULL;
+
+    if (*listHead == NULL) {
+        *listHead = newNodePtr;
+        return;
+    }
+
+    while(last->next != NULL) {
+        last = last->next;
+    }
+
+    last->next = newNodePtr;
+}
+
+PathListNode* GetPathListLastNode(PathListNode** listHead) {
+    PathListNode* listStart = *listHead;
+
+    while(listStart->next != NULL) {
+        listStart = listStart->next;
+    }
+
+    return listStart;
+}

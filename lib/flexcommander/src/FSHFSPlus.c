@@ -11,32 +11,34 @@
 #include <stdbool.h>
 #include "utils/Endians.h"
 
-int Verify(FlexCommanderFS* fs);
+int Verify(FlexCommanderFS *fs);
 
-int ReadBtreeHeader(uint64_t pos, FlexCommanderFS* fs);
+int ReadBtreeHeader(uint64_t pos, FlexCommanderFS *fs);
 
-void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec* header, FlexCommanderFS* fs);
+void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec *header, FlexCommanderFS *fs);
 
-PathListNode* SplitPath(char* path) {
-    PathListNode* start = NULL;
-    PathListNode* node = calloc(1, sizeof(PathListNode));
-    start = node;
-    char* pathToken;
-    node->token = "/";
+PathListNode *SplitPath(char *path) {
+    PathListNode *listHead = NULL;
+    char *pathToken;
+    PathListNode node;
+    node.token = "/";
+    PathListAdd(&listHead, node);
 
     while ((pathToken = strsep(&path, "/"))) {
         if (strcmp(pathToken, "") == 0) {
             continue;
         }
-        node->next = calloc(1, sizeof(PathListNode));
-        node = node->next;
-        node->token = pathToken;
+        PathListNode newNode;
+        memset(&newNode, 0, sizeof(PathListNode));
+        newNode.token = calloc(sizeof(char), strlen(pathToken) + 1);
+        newNode.token = strcpy(newNode.token, pathToken);
+        PathListAdd(&listHead, newNode);
     }
 
-    return start;
+    return listHead;
 }
 
-uint64_t GetCatalogueFileLocation(HFSPlusVolumeHeader header, FlexCommanderFS* fs) {
+uint64_t GetCatalogueFileLocation(HFSPlusVolumeHeader header, FlexCommanderFS *fs) {
     uint64_t catalogFirstBlockNum = htonl(header.catalogFile.extents[0].startBlock);
     uint64_t catalogFileLocation = catalogFirstBlockNum * fs->blockSize;
     printf("Catalog file location: %lx\n", catalogFileLocation);
@@ -44,7 +46,7 @@ uint64_t GetCatalogueFileLocation(HFSPlusVolumeHeader header, FlexCommanderFS* f
     return catalogFileLocation;
 }
 
-void PrintVolumeHeader(HFSPlusVolumeHeader header, FlexCommanderFS* fs) {
+void PrintVolumeHeader(HFSPlusVolumeHeader header, FlexCommanderFS *fs) {
     printf("Volume info:\n");
     printf("Total files: %d\n", htonl(header.fileCount));
     printf("Total folders: %d\n", htonl(header.folderCount));
@@ -58,8 +60,8 @@ void PrintVolumeHeader(HFSPlusVolumeHeader header, FlexCommanderFS* fs) {
     printf("Catalog file total blocks: %u\n", htonl(header.catalogFile.totalBlocks));
 }
 
-int FlexOpen(const char* path, FlexCommanderFS* fs) {
-    FILE* dev = fopen(path, "rb");
+int FlexOpen(const char *path, FlexCommanderFS *fs) {
+    FILE *dev = fopen(path, "rb");
 
     if (!dev) {
         perror("Can't open dev!\n");
@@ -74,7 +76,7 @@ int FlexOpen(const char* path, FlexCommanderFS* fs) {
     return 0;
 }
 
-int Verify(FlexCommanderFS* fs) {
+int Verify(FlexCommanderFS *fs) {
 
     HFSPlusVolumeHeader header;
 
@@ -102,47 +104,23 @@ int Verify(FlexCommanderFS* fs) {
     }
 }
 
-int FlexListDirContent(const char* path, FlexCommanderFS* fs) {
-    char* pathCopy = malloc(strlen(path) + 1);
+int FlexListDirContent(const char *path, FlexCommanderFS *fs) {
+    char *pathCopy = malloc(strlen(path) + 1);
     strcpy(pathCopy, path);
-    PathListNode* list = SplitPath(pathCopy);
+    PathListNode *list = SplitPath(pathCopy);
     free(pathCopy);
 
     BTHeaderRec catalogFileHeader;
     ExtractCatalogBtreeHeader(fs->catalogFileBlock, &catalogFileHeader, fs);
-    uint64_t rootFolderLeafBlock;
+
     while (list) {
-        if (strcmp(list->token, "/") == 0) {
-            rootFolderLeafBlock =
-                    GetRecordBlockNumByCNID(catalogFileHeader.rootNode + fs->catalogFileBlock, 1, catalogFileHeader, *fs) + fs->catalogFileBlock;
-            if (rootFolderLeafBlock == 0) {
-                ParseLeafNode(catalogFileHeader.rootNode + fs->catalogFileBlock, 2, catalogFileHeader, *fs);
-            }
-            else if (rootFolderLeafBlock == -1) {
-                fputs("Unexpected error! Didn't find a record.\n", stderr);
-            }
-            else {
-                FSRecordListNode *fsRecordList = ParseLeafNode(rootFolderLeafBlock, 2, catalogFileHeader, *fs);
-                while (fsRecordList) {
-                    if (fsRecordList->name.length) {
-                        for (int i = 0; i < fsRecordList->name.length; i++) {
-                            printf("%lc", fsRecordList->name.unicode[i]);
-                        }
-                        if (fsRecordList->type == FolderRecord) {
-                            printf("/");
-                        }
-                        printf("\n");
-                    }
-                    fsRecordList = fsRecordList->next;
-                }
-            }
-        }
+        printf("%s\n", list->token);
         list = list->next;
     }
     return 0;
 }
 
-void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec* header, FlexCommanderFS* fs) {
+void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec *header, FlexCommanderFS *fs) {
     BTNodeDescriptor btreeHeaderDescr;
     FlexFSeek(fs->file, block * fs->blockSize, SEEK_SET);
     FlexRead(&btreeHeaderDescr, sizeof(BTNodeDescriptor), 1, fs->file);
