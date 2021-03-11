@@ -116,8 +116,13 @@ int Verify(FlexCommanderFS *fs) {
 }
 
 int FlexListDirContent(const char *path, FlexCommanderFS *fs) {
+    if (strcmp(path, "") == 0 | strcmp(path, "\n") == 0) {
+        printf("Path doesn't exist!\n");
+        return 0;
+    }
     char *pathCopy = malloc(strlen(path) + 1);
     strcpy(pathCopy, path);
+    pathCopy[strlen(pathCopy) - 1] = 0;
     PathListNode *list = SplitPath(pathCopy);
     PathListNode *listStart = list;
     free(pathCopy);
