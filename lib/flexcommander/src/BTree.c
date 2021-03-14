@@ -159,8 +159,7 @@ void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCo
     free(rawNode);
 }
 
-uint32_t
-FindIdOfFolder(const char *folderName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
+uint32_t FindIdOfFolder(const char *folderName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
     char *rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;

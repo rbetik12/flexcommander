@@ -22,10 +22,9 @@ int IterateDevices(FlexCommanderProbeInfo* info) {
     const double gibibyteDivider = pow(2, 30);
     const double mibibyteDivider = pow(2, 20);
 
-    printf("Partitions\n");
     while (blkid_dev_next(iterator, &device) == 0) {
         const char * devName = blkid_dev_devname(device);
-        printf("\t%s\n", devName);
+        printf("%s", devName);
 
         if (isRoot) {
             blkid_probe probe = blkid_new_probe_from_filename(devName);
@@ -35,12 +34,16 @@ int IterateDevices(FlexCommanderProbeInfo* info) {
             }
             else {
                 blkid_loff_t probeSize = blkid_probe_get_size(probe);
-                printf("\t\tSize: ");
+                printf("\t");
                 if (probeSize >= gibibyteDivider) {
-                    printf("%lld GiB\n", (long long) (probeSize / gibibyteDivider));
+                    printf("%lld GiB\t", (long long) (probeSize / gibibyteDivider));
                 } else if (probeSize < gibibyteDivider) {
-                    printf("%lld MiB\n", (long long) (probeSize / mibibyteDivider));
+                    printf("%lld MiB\t", (long long) (probeSize / mibibyteDivider));
                 }
+                blkid_do_probe(probe);
+                const char * fsType;
+                blkid_probe_lookup_value(probe, "TYPE", &fsType, NULL);
+                printf("%s\n", fsType);
             }
 
         }
