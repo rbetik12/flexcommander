@@ -120,9 +120,13 @@ int FlexListDirContent(const char *path, FlexCommanderFS *fs) {
         printf("Path doesn't exist!\n");
         return 0;
     }
-    char *pathCopy = malloc(strlen(path) + 1);
-    strcpy(pathCopy, path);
-    pathCopy[strlen(pathCopy) - 1] = 0;
+    size_t strLength = strlen(path) + 1;
+    char *pathCopy = malloc(strLength);
+    memcpy(pathCopy, path, strLength);
+    size_t pathCopyLength = strlen(pathCopy);
+    if (pathCopy[pathCopyLength - 1] == '\n') {
+        pathCopy[strlen(pathCopy) - 1] = 0;
+    }
     PathListNode *list = SplitPath(pathCopy);
     PathListNode *listStart = list;
     free(pathCopy);
@@ -145,6 +149,35 @@ int FlexListDirContent(const char *path, FlexCommanderFS *fs) {
         list = list->next;
     }
     return 0;
+}
+
+int FlexSetCurrentDir(const char* path, FlexCommanderFS* fs) {
+    if (strcmp(path, "") == 0 | strcmp(path, "\n") == 0) {
+        return -1;
+    }
+    char *pathCopy = malloc(strlen(path) + 1);
+    strcpy(pathCopy, path);
+    pathCopy[strlen(pathCopy) - 1] = 0;
+    PathListNode *list = SplitPath(pathCopy);
+    free(pathCopy);
+
+    BTHeaderRec catalogFileHeader;
+    ExtractCatalogBtreeHeader(fs->catalogFileBlock, &catalogFileHeader, fs);
+
+    uint32_t parentID = 2;
+    while (list) {
+        if (list->next == NULL) {
+            if (parentID == 0) {
+                return -1;
+            }
+            return 0;
+        }
+        else {
+            parentID = FindIdOfFolder(list->next->token, parentID, catalogFileHeader, *fs);
+        }
+        list = list->next;
+    }
+    return -1;
 }
 
 void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec *header, FlexCommanderFS *fs) {

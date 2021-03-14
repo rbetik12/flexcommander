@@ -23,3 +23,4 @@ int IterateDevices(FlexCommanderProbeInfo* info);
 //Functions for filesystem interaction
 int FlexOpen(const char * path, FlexCommanderFS* fs);
 int FlexListDirContent(const char* path, FlexCommanderFS* fs);
+int FlexSetCurrentDir(const char* path, FlexCommanderFS* fs);
