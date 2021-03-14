@@ -5,7 +5,7 @@
 #define CURRENT_DIR_STRING_LENGTH 200
 #define COMMAND_MAX_LENGTH CURRENT_DIR_STRING_LENGTH
 
-void StripString(char* string) {
+void StripString(char *string) {
     uint64_t index = 0;
     while (string[index] != '\0') {
         if (string[index] == '\n') {
@@ -15,8 +15,8 @@ void StripString(char* string) {
     }
 }
 
-int main(int argc, char** argv) {
-    /*if (argc < 2) {
+int main(int argc, char **argv) {
+    if (argc < 2) {
         fputs("flexcom [-l -i] <dev path>\n", stderr);
         fputs("-l list all the available devices\n", stderr);
         fputs("-i interactive mode\n", stderr);
@@ -28,10 +28,9 @@ int main(int argc, char** argv) {
         Init(&info);
         ProbeDevices(&info);
         IterateDevices(&info);
-    }*/
-//    else if (strcmp(argv[1], "-i") == 0) {
+    } else if (strcmp(argv[1], "-i") == 0) {
         FlexCommanderFS fs;
-        if (FlexOpen("hfs.img", &fs)) {
+        if (FlexOpen(argv[2], &fs)) {
             fprintf(stderr, "Error!\n");
             exit(EXIT_FAILURE);
         }
@@ -53,30 +52,25 @@ int main(int argc, char** argv) {
             if (str[0] == 'l' && str[1] == 's') {
                 if (str[3] == '.') {
                     FlexListDirContent(currentDir, &fs);
-                }
-                else {
+                } else {
                     FlexListDirContent(str + 3, &fs);
                 }
-            }
-            else if (str[0] == 'c' && str[1] == 'd') {
+            } else if (str[0] == 'c' && str[1] == 'd') {
                 if (FlexSetCurrentDir(str + 3, &fs)) {
                     fprintf(stderr, "Path doesn't exist!\n");
-                }
-                else {
+                } else {
                     memset(currentDir, 0, CURRENT_DIR_STRING_LENGTH);
                     memcpy(currentDir, str + 3, CURRENT_DIR_STRING_LENGTH - 3);
                 }
-            }
-            else {
+            } else {
                 printf("Unknown command!\n");
             }
         }
         free(currentDir);
-//    }
-//    else {
-//        fputs("Unknown key!\n", stderr);
-//        exit(EXIT_FAILURE);
-//    }
+    } else {
+        fputs("Unknown key!\n", stderr);
+        exit(EXIT_FAILURE);
+    }
 
     return 0;
 }
