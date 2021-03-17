@@ -1,6 +1,8 @@
 #include <Flexcommander.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include "../lib/flexcommander/src/copy/Copy.h"
 
 #define CURRENT_DIR_STRING_LENGTH 200
 #define COMMAND_MAX_LENGTH CURRENT_DIR_STRING_LENGTH
