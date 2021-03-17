@@ -24,3 +24,4 @@ int IterateDevices(FlexCommanderProbeInfo* info);
 int FlexOpen(const char * path, FlexCommanderFS* fs);
 int FlexListDirContent(const char* path, FlexCommanderFS* fs);
 int FlexSetCurrentDir(const char* path, FlexCommanderFS* fs);
+int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs);

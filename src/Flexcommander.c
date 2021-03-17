@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
         IterateDevices(&info);
     } else if (strcmp(argv[1], "-i") == 0) {
         FlexCommanderFS fs;
-        if (FlexOpen(argv[2], &fs)) {
+        if (FlexOpen("hfs.img", &fs)) {
             fprintf(stderr, "Error!\n");
             exit(EXIT_FAILURE);
         }
@@ -64,7 +64,10 @@ int main(int argc, char **argv) {
                     memset(currentDir, 0, CURRENT_DIR_STRING_LENGTH);
                     memcpy(currentDir, str + 3, CURRENT_DIR_STRING_LENGTH - 3);
                 }
-            } else {
+            } else if (str[0] == 'c' && str[1] == 'p') {
+                FlexCopy(str + 3, currentDir, &fs);
+            }
+            else {
                 printf("Unknown command!\n");
             }
         }

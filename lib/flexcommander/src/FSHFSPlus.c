@@ -17,7 +17,7 @@ int ReadBtreeHeader(uint64_t pos, FlexCommanderFS *fs);
 
 void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec *header, FlexCommanderFS *fs);
 
-PathListNode *SplitPath(char *path) {
+PathListNode *SplitPath(char *path) { // TO DO: Get rid of this function
     PathListNode *listHead = NULL;
     char *pathToken;
     PathListNode node;
@@ -25,6 +25,24 @@ PathListNode *SplitPath(char *path) {
     PathListAdd(&listHead, node);
 
     while ((pathToken = strsep(&path, "/"))) {
+        if (strcmp(pathToken, "") == 0) {
+            continue;
+        }
+        PathListNode newNode;
+        memset(&newNode, 0, sizeof(PathListNode));
+        newNode.token = calloc(sizeof(char), strlen(pathToken) + 1);
+        newNode.token = strcpy(newNode.token, pathToken);
+        PathListAdd(&listHead, newNode);
+    }
+
+    return listHead;
+}
+
+PathListNode *SplitPathWithDelimeter(char *path, const char* delimeter) {
+    PathListNode *listHead = NULL;
+    char *pathToken;
+
+    while ((pathToken = strsep(&path, delimeter))) {
         if (strcmp(pathToken, "") == 0) {
             continue;
         }
@@ -193,4 +211,37 @@ void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec *header, FlexCommande
     FlexRead(header, sizeof(BTHeaderRec), 1, fs->file);
     ConvertBTreeHeader(header);
     ConvertBTreeNodeDescriptor(&btreeHeaderDescr);
+}
+
+int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
+    PathListNode *list = SplitPathWithDelimeter(path, " ");
+    char *src;
+    char *dest;
+    uint32_t i = 0;
+
+    while (list) {
+        if (i == 0) {
+            src = list->token;
+        }
+        else {
+            dest = list->token;
+            if (dest[strlen(dest) - 1] == '\n') {
+                dest[strlen(dest) - 1] = '\0';
+            }
+        }
+        i++;
+        list = list->next;
+    }
+
+    char srcPath[1024];
+    if (src[0] == '.') {
+        if (strlen(src) > 1) {
+            snprintf(srcPath, sizeof(srcPath), "%s%s", currentDir, src + 1);
+        }
+        else {
+            snprintf(srcPath, sizeof(srcPath), "%s", currentDir);
+        }
+        printf("%s\n", srcPath);
+    }
+    return 0;
 }
