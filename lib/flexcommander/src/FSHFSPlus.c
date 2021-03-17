@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "utils/Endians.h"
+#include "copy/Copy.h"
 
 int Verify(FlexCommanderFS *fs);
 
@@ -241,7 +242,6 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
         else {
             snprintf(srcPath, sizeof(srcPath), "%s", currentDir);
         }
-        printf("%s\n", srcPath);
     }
     else {
         snprintf(srcPath, sizeof(srcPath), "%s", src);
@@ -268,18 +268,21 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
         }
         splitedSrcPathList  = splitedSrcPathList ->next;
     }
+
     if (parentID != 0) {
-        printf("Is dir! %d\n", parentID);
+        // TO DO Directory copying
     }
     else {
         splitedSrcPathList = splitedSrcPathListStart;
         parentID = 2;
+        HFSPlusCatalogFile *file = NULL;
         while (splitedSrcPathList) {
             if (splitedSrcPathList->next == NULL) {
                 if (parentID == 0) {
                     parentID = 0;
                     break;
                 }
+                file = GetFileRecord(parentID, header, *fs);
                 break;
             } else {
                 parentID = FindIdOfFile(splitedSrcPathList->next->token, parentID, header, *fs);
@@ -290,7 +293,8 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
             printf("Something gone wrong! :(\n");
         }
         else {
-            printf("Is file! %d\n", parentID);
+            CopyFile(dest, splitedSrcPathList->token, *file, fs);
+            printf("Copied file successfully!\n");
         }
     }
 

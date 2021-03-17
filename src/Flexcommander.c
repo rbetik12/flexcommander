@@ -5,7 +5,7 @@
 #define CURRENT_DIR_STRING_LENGTH 200
 #define COMMAND_MAX_LENGTH CURRENT_DIR_STRING_LENGTH
 
-//#define DEBUG
+#define DEBUG
 
 void StripString(char *string) {
     uint64_t index = 0;

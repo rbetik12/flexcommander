@@ -61,4 +61,6 @@ uint32_t ParseLeafNodeWithCondition(char *rawNode, const char *folderName, uint3
                                     BTNodeDescriptor descriptor, enum HFSDataRecordType _recordType);
 uint32_t FindIdOfFile(const char *fileName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs);
 void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCommanderFS fs);
+HFSPlusCatalogFile* GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs);
+
 

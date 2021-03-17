@@ -10,7 +10,7 @@
 // Use only with structures. Idk why, but it doesn't work with 4 byte values.
 #define CAST_PTR_TO_TYPE(type, ptr) *(type*)ptr
 
-bool HFSStrToStrCmp(HFSUniStr255 hfsStr, const char *str) {
+bool HFSStrToStrCmp(HFSUniStr255 hfsStr, const char* str) {
     size_t strLen = strlen(str);
     if (strLen != hfsStr.length) {
         return false;
@@ -42,7 +42,7 @@ void PrintHFSUnicode(HFSUniStr255 str) {
     }
 }
 
-uint32_t ParseLeafNode(char *rawNode, const char *folderName, uint32_t folderParentId, BTHeaderRec btreeHeader,
+uint32_t ParseLeafNode(char* rawNode, const char* folderName, uint32_t folderParentId, BTHeaderRec btreeHeader,
                        BTNodeDescriptor descriptor) {
     uint16_t recordAddress[descriptor.numRecords];
     int j = 0;
@@ -75,7 +75,7 @@ uint32_t ParseLeafNode(char *rawNode, const char *folderName, uint32_t folderPar
     return 0;
 }
 
-void ParseLeafNodeContent(char *rawNode, uint32_t parentID, BTHeaderRec btreeHeader, FlexCommanderFS fs,
+void ParseLeafNodeContent(char* rawNode, uint32_t parentID, BTHeaderRec btreeHeader, FlexCommanderFS fs,
                           BTNodeDescriptor descriptor) {
     uint16_t recordAddress[descriptor.numRecords];
     int j = 0;
@@ -125,7 +125,7 @@ void ParseLeafNodeContent(char *rawNode, uint32_t parentID, BTHeaderRec btreeHea
 }
 
 void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
-    char *rawNode = calloc(sizeof(char), fs.blockSize);
+    char* rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
@@ -159,8 +159,8 @@ void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCo
     free(rawNode);
 }
 
-uint32_t FindIdOfFolder(const char *folderName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
-    char *rawNode = calloc(sizeof(char), fs.blockSize);
+uint32_t FindIdOfFolder(const char* folderName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
+    char* rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
@@ -200,8 +200,41 @@ uint32_t FindIdOfFolder(const char *folderName, uint32_t folderParentId, BTHeade
 
 // That shit below must be rewritten
 
-uint32_t ParseLeafNodeWithCondition(char *rawNode, const char *folderName, uint32_t folderParentId, BTHeaderRec btreeHeader,
-                       BTNodeDescriptor descriptor, enum HFSDataRecordType recordTypeToFind) {
+HFSPlusCatalogFile* GetFileRecordFromLeafNode(uint32_t fileId, BTNodeDescriptor descriptor, BTHeaderRec btreeHeader, char* rawNode) {
+    uint16_t recordAddress[descriptor.numRecords];
+    int j = 0;
+    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
+        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
+        j += 1;
+    }
+
+    HFSPlusCatalogFile *catalogFile = malloc(sizeof(HFSPlusCatalogFile));
+    for (int i = 0; i < descriptor.numRecords; i++) {
+        HFSPlusCatalogKey key;
+        key = CAST_PTR_TO_TYPE(HFSPlusCatalogKey, (rawNode + recordAddress[i]));
+        ConvertCatalogKey(&key);
+
+        uint16_t recordType = rawNode[recordAddress[i] + key.keyLength + sizeof(key.keyLength) + 1];
+        if (recordType == FileRecord) {
+            *catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile, (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
+            ConvertCatalogFile(catalogFile);
+            if (catalogFile->fileID == fileId) {
+                return catalogFile;
+            }
+            else {
+                continue;
+            }
+        } else {
+            continue;
+        }
+    }
+
+    free(catalogFile);
+    return NULL;
+}
+
+uint32_t ParseLeafNodeWithCondition(char* rawNode, const char* folderName, uint32_t folderParentId, BTHeaderRec btreeHeader,
+                                    BTNodeDescriptor descriptor, enum HFSDataRecordType recordTypeToFind) {
     uint16_t recordAddress[descriptor.numRecords];
     int j = 0;
     for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
@@ -227,13 +260,12 @@ uint32_t ParseLeafNodeWithCondition(char *rawNode, const char *folderName, uint3
                 return catalogFolder.folderID;
             }
         } else if (recordType == FileRecord && recordTypeToFind == FileRecord) {
-            catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile,(rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
+            catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile, (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
             ConvertCatalogFile(&catalogFile);
             if (HFSStrToStrCmp(key.nodeName, folderName)) {
                 return catalogFile.fileID;
             }
-        }
-        else {
+        } else {
             continue;
         }
     }
@@ -241,9 +273,9 @@ uint32_t ParseLeafNodeWithCondition(char *rawNode, const char *folderName, uint3
     return 0;
 }
 
-uint32_t FindIdOfFile(const char *fileName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
-    char *rawNode = calloc(sizeof(char), fs.blockSize);
-    uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode+ fs.catalogFileBlock;
+uint32_t FindIdOfFile(const char* fileName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
+    char* rawNode = calloc(sizeof(char), fs.blockSize);
+    uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
     uint32_t id;
@@ -277,4 +309,44 @@ uint32_t FindIdOfFile(const char *fileName, uint32_t folderParentId, BTHeaderRec
     free(rawNode);
 
     return id;
+}
+
+HFSPlusCatalogFile* GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
+    char* rawNode = calloc(sizeof(char), fs.blockSize);
+    uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
+    BTNodeDescriptor descriptor;
+    bool isLastNode = false;
+    uint32_t extentNum = 0;
+    uint32_t blockNum = 0;
+
+    FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
+    FlexRead(rawNode, fs.blockSize, 1, fs.file);
+
+    HFSPlusCatalogFile * catalogFile = NULL;
+
+    while (!isLastNode) {
+        descriptor = CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode);
+        ConvertBTreeNodeDescriptor(&descriptor);
+        if (descriptor.fLink == 0) {
+            isLastNode = true;
+        }
+
+        catalogFile = GetFileRecordFromLeafNode(fileId, descriptor, catalogBTHeader, rawNode);
+        if (catalogFile != NULL) {
+            return catalogFile;
+        }
+        if (blockNum == fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
+            blockNum = 0;
+            extentNum += 1;
+        }
+        nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock
+                          + (descriptor.fLink % fs.volumeHeader.catalogFile.extents[extentNum].blockCount);
+
+        FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
+        FlexRead(rawNode, fs.blockSize, 1, fs.file);
+        blockNum += 1;
+    }
+
+    free(rawNode);
+    return NULL;
 }
