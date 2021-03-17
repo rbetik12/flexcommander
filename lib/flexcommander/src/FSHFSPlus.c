@@ -243,5 +243,56 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
         }
         printf("%s\n", srcPath);
     }
+    else {
+        snprintf(srcPath, sizeof(srcPath), "%s", src);
+    }
+
+    BTHeaderRec header;
+
+    ExtractCatalogBtreeHeader(fs->catalogFileBlock, &header, fs);
+
+    PathListNode *splitedSrcPathList = SplitPath(srcPath);
+    PathListNode *splitedSrcPathListStart = splitedSrcPathList;
+
+    uint32_t parentID = 2;
+    while (splitedSrcPathList) {
+        if (splitedSrcPathList->next == NULL) {
+            if (parentID == 0) {
+                parentID = 0;
+                break;
+            }
+            break;
+        }
+        else {
+            parentID = FindIdOfFolder(splitedSrcPathList->next->token, parentID, header, *fs);
+        }
+        splitedSrcPathList  = splitedSrcPathList ->next;
+    }
+    if (parentID != 0) {
+        printf("Is dir! %d\n", parentID);
+    }
+    else {
+        splitedSrcPathList = splitedSrcPathListStart;
+        parentID = 2;
+        while (splitedSrcPathList) {
+            if (splitedSrcPathList->next == NULL) {
+                if (parentID == 0) {
+                    parentID = 0;
+                    break;
+                }
+                break;
+            } else {
+                parentID = FindIdOfFile(splitedSrcPathList->next->token, parentID, header, *fs);
+            }
+            splitedSrcPathList = splitedSrcPathList->next;
+        }
+        if (parentID == 0) {
+            printf("Something gone wrong! :(\n");
+        }
+        else {
+            printf("Is file! %d\n", parentID);
+        }
+    }
+
     return 0;
 }

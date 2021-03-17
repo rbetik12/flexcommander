@@ -1,11 +1,11 @@
 #include <Flexcommander.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/stat.h>
-#include "../lib/flexcommander/src/copy/Copy.h"
 
 #define CURRENT_DIR_STRING_LENGTH 200
 #define COMMAND_MAX_LENGTH CURRENT_DIR_STRING_LENGTH
+
+//#define DEBUG
 
 void StripString(char *string) {
     uint64_t index = 0;
@@ -18,6 +18,7 @@ void StripString(char *string) {
 }
 
 int main(int argc, char **argv) {
+#ifndef DEBUG
     if (argc < 2) {
         fputs("flexcom [-l -i] <dev path>\n", stderr);
         fputs("-l list all the available devices\n", stderr);
@@ -31,11 +32,19 @@ int main(int argc, char **argv) {
         ProbeDevices(&info);
         IterateDevices(&info);
     } else if (strcmp(argv[1], "-i") == 0) {
+#endif
         FlexCommanderFS fs;
+#ifdef DEBUG
         if (FlexOpen("hfs.img", &fs)) {
             fprintf(stderr, "Error!\n");
             exit(EXIT_FAILURE);
         }
+#else
+        if (FlexOpen(argv[2], &fs)) {
+            fprintf(stderr, "Error!\n");
+            exit(EXIT_FAILURE);
+        }
+#endif
 
         printf("Welcome to the club, buddy!\n");
 
@@ -72,10 +81,12 @@ int main(int argc, char **argv) {
             }
         }
         free(currentDir);
+#ifndef DEBUG
     } else {
         fputs("Unknown key!\n", stderr);
         exit(EXIT_FAILURE);
     }
+#endif
 
     return 0;
 }
