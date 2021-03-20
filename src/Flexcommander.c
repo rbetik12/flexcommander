@@ -75,7 +75,6 @@ int main(int argc, char **argv) {
                     memcpy(currentDir, str + 3, CURRENT_DIR_STRING_LENGTH - 3);
                 }
             } else if (str[0] == 'c' && str[1] == 'p') {
-                // Don't forget to change it back!!!
                 FlexCopy(str + 3, currentDir, &fs);
             }
             else {

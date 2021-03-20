@@ -67,6 +67,7 @@ void CopyFile(const char* dest, const char* filename, HFSPlusCatalogFile file, F
 }
 
 void CopyDirectory(const char* _src, const char* _dest, uint32_t parentID, BTHeaderRec btreeHeader, FlexCommanderFS fs) {
+    CopyInfo copyInfo;
     const size_t _srcLen = strlen(_src) + 256;
     const size_t _destLen = strlen(_dest) + 256;
     char *src = calloc(_srcLen, 1);
@@ -88,7 +89,8 @@ void CopyDirectory(const char* _src, const char* _dest, uint32_t parentID, BTHea
     MakePath(dest);
     printf("Created directory %s successfully!\n", dest);
 
-    PathListNode * childrenDirs = GetChildrenDirectoriesList(parentID, btreeHeader, fs);
+    copyInfo.dest = dest;
+    PathListNode * childrenDirs = GetChildrenDirectoriesList(parentID, btreeHeader, fs, copyInfo);
     PathListNode * childrenDirsListHead = childrenDirs;
     srcCopy = calloc(_srcLen, 1);
 

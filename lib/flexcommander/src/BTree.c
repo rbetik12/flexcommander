@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <memory.h>
 #include "utils/Endians.h"
+#include "copy/Copy.h"
 
 // Use only with structures. Idk why, but it doesn't work with 4 byte values.
 #define CAST_PTR_TO_TYPE(type, ptr) *(type*)ptr
@@ -362,7 +363,8 @@ HFSPlusCatalogFile* GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, 
     return NULL;
 }
 
-PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTHeaderRec btreeHeader, BTNodeDescriptor descriptor, PathListNode** listHead) {
+PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTHeaderRec btreeHeader,
+                               BTNodeDescriptor descriptor, PathListNode** listHead, CopyInfo copyInfo, FlexCommanderFS fs) {
     uint16_t recordAddress[descriptor.numRecords];
     int j = 0;
     for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
@@ -374,10 +376,6 @@ PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTH
         HFSPlusCatalogKey key;
         key = CAST_PTR_TO_TYPE(HFSPlusCatalogKey, (rawNode + recordAddress[i]));
         ConvertCatalogKey(&key);
-//        printf("Key: %d\n", key.parentID);
-//        printf("Parent id: %d\n", parentFolderId);
-//        PrintHFSUnicode(key.nodeName);
-//        printf("\n");
         if (key.parentID != parentFolderId) continue;
 
         uint16_t recordType = rawNode[recordAddress[i] + key.keyLength + sizeof(key.keyLength) + 1];
@@ -392,7 +390,9 @@ PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTH
             node._cnid = catalogFolder.folderID;
             PathListAdd(listHead, node);
         } else if (recordType == FileRecord) {
-            // TO-DO: file copying!
+            catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile, (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
+            ConvertCatalogFile(&catalogFile);
+            CopyFile(copyInfo.dest, HFSStringToBytes(key.nodeName), catalogFile, &fs);
         } else {
             continue;
         }
@@ -400,7 +400,8 @@ PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTH
     return *listHead;
 }
 
-PathListNode* GetChildrenDirectoriesList(uint32_t parentFolderId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
+PathListNode* GetChildrenDirectoriesList(uint32_t parentFolderId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs,
+                                         CopyInfo copyInfo) {
     char* rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
@@ -419,7 +420,7 @@ PathListNode* GetChildrenDirectoriesList(uint32_t parentFolderId, BTHeaderRec ca
             isLastNode = true;
         }
 
-        list = _GetChildrenDirs(parentFolderId, rawNode, catalogBTHeader, descriptor, &list);
+        list = _GetChildrenDirs(parentFolderId, rawNode, catalogBTHeader, descriptor, &list, copyInfo, fs);
 
         if (nodeBlockNumber == fs.volumeHeader.catalogFile.extents[extentNum].startBlock + fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
             extentNum += 1;
