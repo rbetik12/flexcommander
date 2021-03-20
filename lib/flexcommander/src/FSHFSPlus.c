@@ -270,7 +270,7 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
     }
 
     if (parentID != 0) {
-        // TO DO Directory copying
+
     }
     else {
         splitedSrcPathList = splitedSrcPathListStart;
@@ -296,6 +296,7 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
             CopyFile(dest, splitedSrcPathList->token, *file, fs);
             printf("Copied file successfully!\n");
         }
+        free(file);
     }
 
     return 0;

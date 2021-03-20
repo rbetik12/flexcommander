@@ -293,6 +293,9 @@ uint32_t FindIdOfFile(const char* fileName, uint32_t folderParentId, BTHeaderRec
         }
 
         id = ParseLeafNodeWithCondition(rawNode, fileName, folderParentId, catalogBTHeader, descriptor, FileRecord);
+        if (id == 0) {
+            id = ParseLeafNodeWithCondition(rawNode, fileName, folderParentId, catalogBTHeader, descriptor, FolderRecord);
+        }
         if (id != 0) break;
         if (blockNum == fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
             blockNum = 0;

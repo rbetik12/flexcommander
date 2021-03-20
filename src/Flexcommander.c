@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
         printf("Welcome to the club, buddy!\n");
 
         char *currentDir = calloc(CURRENT_DIR_STRING_LENGTH, sizeof(char));
+        currentDir[0] = '/';
         while (1) {
             char str[COMMAND_MAX_LENGTH] = {0};
             StripString(currentDir);
