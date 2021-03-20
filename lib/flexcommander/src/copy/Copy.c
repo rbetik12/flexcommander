@@ -79,9 +79,12 @@ void CopyDirectory(const char* _src, const char* _dest, uint32_t parentID, BTHea
     PathListNode* list = SplitPathWithDelimeter(srcCopy, "/");
     free(srcCopy);
 
-    PathListNode* lastNode = GetPathListLastNode(&list);
-    strcat(dest, "/");
-    strcat(dest, lastNode->token);
+    if (list) {
+        PathListNode* lastNode = GetPathListLastNode(&list);
+        strcat(dest, "/");
+        strcat(dest, lastNode->token);
+    }
+
     MakePath(dest);
     printf("Created directory %s successfully!\n", dest);
 
