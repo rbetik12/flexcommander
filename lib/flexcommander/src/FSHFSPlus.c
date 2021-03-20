@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "utils/Endians.h"
 #include "copy/Copy.h"
+#include "utils/Utils.h"
 
 int Verify(FlexCommanderFS *fs);
 
@@ -26,24 +27,6 @@ PathListNode *SplitPath(char *path) { // TO DO: Get rid of this function
     PathListAdd(&listHead, node);
 
     while ((pathToken = strsep(&path, "/"))) {
-        if (strcmp(pathToken, "") == 0) {
-            continue;
-        }
-        PathListNode newNode;
-        memset(&newNode, 0, sizeof(PathListNode));
-        newNode.token = calloc(sizeof(char), strlen(pathToken) + 1);
-        newNode.token = strcpy(newNode.token, pathToken);
-        PathListAdd(&listHead, newNode);
-    }
-
-    return listHead;
-}
-
-PathListNode *SplitPathWithDelimeter(char *path, const char* delimeter) {
-    PathListNode *listHead = NULL;
-    char *pathToken;
-
-    while ((pathToken = strsep(&path, delimeter))) {
         if (strcmp(pathToken, "") == 0) {
             continue;
         }
@@ -251,8 +234,11 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
 
     ExtractCatalogBtreeHeader(fs->catalogFileBlock, &header, fs);
 
-    PathListNode *splitedSrcPathList = SplitPath(srcPath);
+    char * srcPathCopy = calloc(strlen(srcPath) + 1, 1);
+    strcpy(srcPathCopy, srcPath);
+    PathListNode *splitedSrcPathList = SplitPath(srcPathCopy);
     PathListNode *splitedSrcPathListStart = splitedSrcPathList;
+    free(srcPathCopy);
 
     uint32_t parentID = 2;
     while (splitedSrcPathList) {
@@ -270,7 +256,7 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
     }
 
     if (parentID != 0) {
-
+        CopyDirectory(srcPath, dest, parentID, header, *fs);
     }
     else {
         splitedSrcPathList = splitedSrcPathListStart;

@@ -5,6 +5,7 @@
 typedef struct PathListNode {
     struct PathListNode* next;
     const char* token;
+    uint32_t _cnid;
 } PathListNode;
 
 typedef struct FSRecordListNode {

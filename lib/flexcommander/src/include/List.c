@@ -25,6 +25,7 @@ void PathListAdd(PathListNode** listHead, PathListNode newNode) {
     PathListNode * newNodePtr = malloc(sizeof(PathListNode));
     PathListNode * last = *listHead;
     newNodePtr->token = newNode.token;
+    newNodePtr->_cnid = newNode._cnid;
     newNodePtr->next = NULL;
 
     if (*listHead == NULL) {

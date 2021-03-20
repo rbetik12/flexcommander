@@ -4,7 +4,10 @@
 #include <stdio.h>
 #include <HFSCatalog.h>
 #include <stdlib.h>
+#include <List.h>
+#include <HFSPlusBTree.h>
 #include "Copy.h"
+#include "../utils/Utils.h"
 
 void MakePath(char* dir) {
     char cwd[512];
@@ -48,6 +51,10 @@ void CopyFile(const char* dest, const char* filename, HFSPlusCatalogFile file, F
     snprintf(filePath, sizeof(filePath), "%s/%s", dest, filename);
     FILE* destFile = NULL;
     destFile = fopen(filePath, "wb");
+    if (destFile == NULL) {
+        fprintf(stderr, "Unexpected NULL destination file!\n");
+        return;
+    }
     for (int i = 0; i < 8; i++) {
         HFSPlusExtentRecord extent = file.dataFork.extents[i];
         if (extent.startBlock != 0 && extent.blockCount != 0) {
@@ -57,4 +64,41 @@ void CopyFile(const char* dest, const char* filename, HFSPlusCatalogFile file, F
         }
     }
     fclose(destFile);
+}
+
+void CopyDirectory(const char* _src, const char* _dest, uint32_t parentID, BTHeaderRec btreeHeader, FlexCommanderFS fs) {
+    const size_t _srcLen = strlen(_src) + 256;
+    const size_t _destLen = strlen(_dest) + 256;
+    char *src = calloc(_srcLen, 1);
+    char *dest = calloc(_destLen, 1);
+    strcpy(src, _src);
+    strcpy(dest, _dest);
+
+    char *srcCopy = calloc(_srcLen, 1);
+    strcpy(srcCopy, _src);
+    PathListNode* list = SplitPathWithDelimeter(srcCopy, "/");
+    free(srcCopy);
+
+    PathListNode* lastNode = GetPathListLastNode(&list);
+    strcat(dest, "/");
+    strcat(dest, lastNode->token);
+    MakePath(dest);
+    printf("Created directory %s successfully!\n", dest);
+
+    PathListNode * childrenDirs = GetChildrenDirectoriesList(parentID, btreeHeader, fs);
+    PathListNode * childrenDirsListHead = childrenDirs;
+    srcCopy = calloc(_srcLen, 1);
+
+    while(childrenDirs) {
+        strcpy(srcCopy, _src);
+        strcat(srcCopy, "/");
+        strcat(srcCopy, childrenDirs->token);
+        CopyDirectory(srcCopy, dest, childrenDirs->_cnid, btreeHeader, fs);
+        memset(srcCopy, 0, _srcLen);
+        childrenDirs = childrenDirs->next;
+    }
+
+    free(src);
+    free(dest);
+    free(srcCopy);
 }
