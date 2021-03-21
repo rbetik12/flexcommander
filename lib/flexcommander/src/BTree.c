@@ -8,6 +8,9 @@
 #include "utils/Endians.h"
 #include "copy/Copy.h"
 
+// GOD BLESS ME TO REWRITE CODE BELOW
+
+
 // Use only with structures. Idk why, but it doesn't work with 4 byte values.
 #define CAST_PTR_TO_TYPE(type, ptr) *(type*)ptr
 
@@ -407,13 +410,13 @@ PathListNode* GetChildrenDirectoriesList(uint32_t parentFolderId, BTHeaderRec ca
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
     uint32_t extentNum = 0;
-
-    FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-    FlexRead(rawNode, fs.blockSize, 1, fs.file);
+    uint32_t currentBlockNum = catalogBTHeader.firstLeafNode;
 
     PathListNode* list = NULL;
-
+    // Here's traversal algorithm that I am pretty fucking sure works
     while (!isLastNode) {
+        FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
+        FlexRead(rawNode, fs.blockSize, 1, fs.file);
         descriptor = CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode);
         ConvertBTreeNodeDescriptor(&descriptor);
         if (descriptor.fLink == 0) {
@@ -422,15 +425,20 @@ PathListNode* GetChildrenDirectoriesList(uint32_t parentFolderId, BTHeaderRec ca
 
         list = _GetChildrenDirs(parentFolderId, rawNode, catalogBTHeader, descriptor, &list, copyInfo, fs);
 
-        if (nodeBlockNumber == fs.volumeHeader.catalogFile.extents[extentNum].startBlock + fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
+        if (nodeBlockNumber == fs.volumeHeader.catalogFile.extents[extentNum].startBlock +
+                               fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
             extentNum += 1;
+            nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock;
+        } else {
+            nodeBlockNumber += descriptor.fLink - currentBlockNum;
+            if (nodeBlockNumber >= fs.volumeHeader.catalogFile.extents[extentNum].startBlock +
+                                   fs.volumeHeader.catalogFile.extents[extentNum].blockCount) {
+                extentNum += 1;
+                nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock;
+            }
         }
 
-        nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock
-                          + (descriptor.fLink % fs.volumeHeader.catalogFile.extents[extentNum].blockCount);
-
-        FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-        FlexRead(rawNode, fs.blockSize, 1, fs.file);
+        currentBlockNum = descriptor.fLink;
     }
 
     free(rawNode);
