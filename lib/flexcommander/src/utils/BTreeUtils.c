@@ -1,6 +1,7 @@
 #include "BTreeUtils.h"
 #include <string.h>
 #include <stdlib.h>
+#include <FlexIO.h>
 #include "Endians.h"
 
 void GetNextBlockNum(uint64_t* _nodeBlockNumber, uint64_t* _extentNum, uint64_t* _currentBlockNum,

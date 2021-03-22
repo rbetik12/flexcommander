@@ -90,7 +90,7 @@ void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCo
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
     uint64_t extentNum = 0;
-    uint64_t currentBlockNum = 0;
+    uint64_t currentBlockNum = catalogBTHeader.firstLeafNode;
 
     while (!isLastNode) {
         ReadNodeDescriptor(fs, nodeBlockNumber, &descriptor, rawNode);
@@ -113,7 +113,7 @@ uint32_t FindIdOfFolder(const char *folderName, uint32_t folderParentId, BTHeade
     bool isLastNode = false;
     uint32_t id;
     uint64_t extentNum = 0;
-    uint64_t currentBlockNum = 0;
+    uint64_t currentBlockNum = catalogBTHeader.firstLeafNode;
 
     while (!isLastNode) {
         ReadNodeDescriptor(fs, nodeBlockNumber, &descriptor, rawNode);
