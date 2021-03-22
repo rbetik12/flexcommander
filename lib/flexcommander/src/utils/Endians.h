@@ -10,3 +10,4 @@ void ConvertCatalogFolder(HFSPlusCatalogFolder* folder);
 void ConvertCatalogFile(HFSPlusCatalogFile* file);
 void ConvertCatalogThread(HFSPlusCatalogThread* catalogThread);
 void ConvertCatalogIndexNode(BTCatalogIndexNode *indexNode);
+void ConvertBSDInfo(HFSPlusBSDInfo* info);

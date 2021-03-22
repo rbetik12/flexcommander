@@ -41,6 +41,7 @@ void ConvertCatalogFolder(HFSPlusCatalogFolder* folder) {
     folder->accessDate = bswap_32(folder->accessDate);
     folder->backupDate = bswap_32(folder->backupDate);
     folder->textEncoding = bswap_32(folder->textEncoding);
+    ConvertBSDInfo(&folder->permissions);
 }
 
 void ConvertCatalogFile(HFSPlusCatalogFile* file) {
@@ -61,6 +62,7 @@ void ConvertCatalogFile(HFSPlusCatalogFile* file) {
         file->dataFork.extents[i].blockCount = bswap_32(file->dataFork.extents[i].blockCount);
         file->dataFork.extents[i].startBlock = bswap_32(file->dataFork.extents[i].startBlock);
     }
+    ConvertBSDInfo(&file->permissions);
 }
 
 void ConvertCatalogThread(HFSPlusCatalogThread* catalogThread) {
@@ -75,4 +77,11 @@ void ConvertCatalogThread(HFSPlusCatalogThread* catalogThread) {
 void ConvertCatalogIndexNode(BTCatalogIndexNode *indexNode) {
     ConvertCatalogKey(&indexNode->key);
     indexNode->nextNode = bswap_32(indexNode->nextNode);
+}
+
+void ConvertBSDInfo(HFSPlusBSDInfo* info) {
+    info->fileMode = bswap_16(info->fileMode);
+    info->groupID = bswap_32(info->groupID);
+    info->ownerID = bswap_32(info->ownerID);
+    info->special.iNodeNum = bswap_32(info->special.iNodeNum);
 }

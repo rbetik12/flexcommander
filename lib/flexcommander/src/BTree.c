@@ -63,12 +63,15 @@ void ParseLeafNodeContent(char *rawNode, uint32_t parentID, BTHeaderRec btreeHea
                 catalogFolder = CAST_PTR_TO_TYPE(HFSPlusCatalogFolder,
                                                  (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
                 ConvertCatalogFolder(&catalogFolder);
-                printf("/");
+                printf("\t");
+                PrintPermissions(catalogFolder.permissions, FolderRecord);
                 break;
             case FileRecord:
                 catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile,
                                                (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
                 ConvertCatalogFile(&catalogFile);
+                printf("\t");
+                PrintPermissions(catalogFolder.permissions, FileRecord);
                 break;
             case FileThreadRecord:
             case FolderThreadRecord:
