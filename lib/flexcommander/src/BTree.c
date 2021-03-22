@@ -14,6 +14,14 @@
 // Use only with structures. Idk why, but it doesn't work with 4 byte values.
 #define CAST_PTR_TO_TYPE(type, ptr) *(type*)ptr
 
+void FillRecordAddress(BTHeaderRec btreeHeader, BTNodeDescriptor descriptor, char* rawNode, uint16_t* recordAddress) {
+    int j = 0;
+    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
+        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
+        j += 1;
+    }
+}
+
 char* HFSStringToBytes(HFSUniStr255 hfsStr) {
     char* str = calloc(hfsStr.length + 1, 1);
     for (int i = 0; i < hfsStr.length; i++) {
@@ -57,11 +65,12 @@ void PrintHFSUnicode(HFSUniStr255 str) {
 uint32_t ParseLeafNode(char* rawNode, const char* folderName, uint32_t folderParentId, BTHeaderRec btreeHeader,
                        BTNodeDescriptor descriptor) {
     uint16_t recordAddress[descriptor.numRecords];
-    int j = 0;
-    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-        j += 1;
-    }
+//    int j = 0;
+//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
+//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
+//        j += 1;
+//    }
+    FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
 
     for (int i = 0; i < descriptor.numRecords; i++) {
         HFSPlusCatalogKey key;
@@ -90,11 +99,12 @@ uint32_t ParseLeafNode(char* rawNode, const char* folderName, uint32_t folderPar
 void ParseLeafNodeContent(char* rawNode, uint32_t parentID, BTHeaderRec btreeHeader, FlexCommanderFS fs,
                           BTNodeDescriptor descriptor) {
     uint16_t recordAddress[descriptor.numRecords];
-    int j = 0;
-    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-        j += 1;
-    }
+//    int j = 0;
+//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
+//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
+//        j += 1;
+//    }
+    FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
 
     for (int i = 0; i < descriptor.numRecords; i++) {
         HFSPlusCatalogKey key;
@@ -214,11 +224,13 @@ uint32_t FindIdOfFolder(const char* folderName, uint32_t folderParentId, BTHeade
 
 HFSPlusCatalogFile* GetFileRecordFromLeafNode(uint32_t fileId, BTNodeDescriptor descriptor, BTHeaderRec btreeHeader, char* rawNode) {
     uint16_t recordAddress[descriptor.numRecords];
-    int j = 0;
-    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-        j += 1;
-    }
+//    int j = 0;
+//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
+//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
+//        j += 1;
+//    }
+
+    FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
 
     HFSPlusCatalogFile *catalogFile = malloc(sizeof(HFSPlusCatalogFile));
     for (int i = 0; i < descriptor.numRecords; i++) {
@@ -249,10 +261,12 @@ uint32_t ParseLeafNodeWithCondition(char* rawNode, const char* folderName, uint3
                                     BTNodeDescriptor descriptor, enum HFSDataRecordType recordTypeToFind) {
     uint16_t recordAddress[descriptor.numRecords];
     int j = 0;
-    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-        j += 1;
-    }
+//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
+//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
+//        j += 1;
+//    }
+
+    FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
 
     for (int i = 0; i < descriptor.numRecords; i++) {
         HFSPlusCatalogKey key;
@@ -369,12 +383,13 @@ HFSPlusCatalogFile* GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, 
 PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTHeaderRec btreeHeader,
                                BTNodeDescriptor descriptor, PathListNode** listHead, CopyInfo copyInfo, FlexCommanderFS fs) {
     uint16_t recordAddress[descriptor.numRecords];
-    int j = 0;
-    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-        j += 1;
-    }
+//    int j = 0;
+//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
+//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
+//        j += 1;
+//    }
 
+    FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
     for (int i = 0; i < descriptor.numRecords; i++) {
         HFSPlusCatalogKey key;
         key = CAST_PTR_TO_TYPE(HFSPlusCatalogKey, (rawNode + recordAddress[i]));
