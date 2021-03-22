@@ -14,7 +14,39 @@
 // Use only with structures. Idk why, but it doesn't work with 4 byte values.
 #define CAST_PTR_TO_TYPE(type, ptr) *(type*)ptr
 
-void FillRecordAddress(BTHeaderRec btreeHeader, BTNodeDescriptor descriptor, char* rawNode, uint16_t* recordAddress) {
+void GetNextBlockNum(uint64_t* _nodeBlockNumber, uint64_t* _extentNum, uint64_t* _currentBlockNum,
+                     BTNodeDescriptor descriptor, FlexCommanderFS fs) {
+    uint64_t nodeBlockNumber = *_nodeBlockNumber;
+    uint64_t extentNum = *_extentNum;
+    uint64_t currentBlockNum = *_currentBlockNum;
+
+    if (nodeBlockNumber == fs.volumeHeader.catalogFile.extents[extentNum].startBlock +
+                           fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
+        extentNum += 1;
+        nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock;
+    } else {
+        nodeBlockNumber += descriptor.fLink - currentBlockNum;
+        if (nodeBlockNumber >= fs.volumeHeader.catalogFile.extents[extentNum].startBlock +
+                               fs.volumeHeader.catalogFile.extents[extentNum].blockCount) {
+            extentNum += 1;
+            nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock;
+        }
+    }
+    currentBlockNum = descriptor.fLink;
+
+    *_nodeBlockNumber = nodeBlockNumber;
+    *_extentNum = extentNum;
+    *_currentBlockNum = currentBlockNum;
+}
+
+void ReadNodeDescriptor(FlexCommanderFS fs, uint64_t nodeBlockNumber, BTNodeDescriptor *descriptor, char *rawNode) {
+    FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
+    FlexRead(rawNode, fs.blockSize, 1, fs.file);
+    descriptor = memcpy(descriptor, &CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode), sizeof(BTNodeDescriptor));
+    ConvertBTreeNodeDescriptor(descriptor);
+}
+
+void FillRecordAddress(BTHeaderRec btreeHeader, BTNodeDescriptor descriptor, char *rawNode, uint16_t *recordAddress) {
     int j = 0;
     for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
         recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
@@ -22,15 +54,15 @@ void FillRecordAddress(BTHeaderRec btreeHeader, BTNodeDescriptor descriptor, cha
     }
 }
 
-char* HFSStringToBytes(HFSUniStr255 hfsStr) {
-    char* str = calloc(hfsStr.length + 1, 1);
+char *HFSStringToBytes(HFSUniStr255 hfsStr) {
+    char *str = calloc(hfsStr.length + 1, 1);
     for (int i = 0; i < hfsStr.length; i++) {
         str[i] = hfsStr.unicode[i];
     }
     return str;
 }
 
-bool HFSStrToStrCmp(HFSUniStr255 hfsStr, const char* str) {
+bool HFSStrToStrCmp(HFSUniStr255 hfsStr, const char *str) {
     size_t strLen = strlen(str);
     if (strLen != hfsStr.length) {
         return false;
@@ -62,7 +94,7 @@ void PrintHFSUnicode(HFSUniStr255 str) {
     }
 }
 
-uint32_t ParseLeafNode(char* rawNode, const char* folderName, uint32_t folderParentId, BTHeaderRec btreeHeader,
+uint32_t ParseLeafNode(char *rawNode, const char *folderName, uint32_t folderParentId, BTHeaderRec btreeHeader,
                        BTNodeDescriptor descriptor) {
     uint16_t recordAddress[descriptor.numRecords];
 //    int j = 0;
@@ -96,14 +128,9 @@ uint32_t ParseLeafNode(char* rawNode, const char* folderName, uint32_t folderPar
     return 0;
 }
 
-void ParseLeafNodeContent(char* rawNode, uint32_t parentID, BTHeaderRec btreeHeader, FlexCommanderFS fs,
+void ParseLeafNodeContent(char *rawNode, uint32_t parentID, BTHeaderRec btreeHeader, FlexCommanderFS fs,
                           BTNodeDescriptor descriptor) {
     uint16_t recordAddress[descriptor.numRecords];
-//    int j = 0;
-//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-//        j += 1;
-//    }
     FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
 
     for (int i = 0; i < descriptor.numRecords; i++) {
@@ -147,7 +174,7 @@ void ParseLeafNodeContent(char* rawNode, uint32_t parentID, BTHeaderRec btreeHea
 }
 
 void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
-    char* rawNode = calloc(sizeof(char), fs.blockSize);
+    char *rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
@@ -181,8 +208,9 @@ void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCo
     free(rawNode);
 }
 
-uint32_t FindIdOfFolder(const char* folderName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
-    char* rawNode = calloc(sizeof(char), fs.blockSize);
+uint32_t FindIdOfFolder(const char *folderName, uint32_t folderParentId,
+                        BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
+    char *rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
@@ -222,13 +250,9 @@ uint32_t FindIdOfFolder(const char* folderName, uint32_t folderParentId, BTHeade
 
 // That shit below must be rewritten
 
-HFSPlusCatalogFile* GetFileRecordFromLeafNode(uint32_t fileId, BTNodeDescriptor descriptor, BTHeaderRec btreeHeader, char* rawNode) {
+HFSPlusCatalogFile * GetFileRecordFromLeafNode(uint32_t fileId, BTNodeDescriptor descriptor,
+                                               BTHeaderRec btreeHeader, char *rawNode) {
     uint16_t recordAddress[descriptor.numRecords];
-//    int j = 0;
-//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-//        j += 1;
-//    }
 
     FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
 
@@ -240,12 +264,12 @@ HFSPlusCatalogFile* GetFileRecordFromLeafNode(uint32_t fileId, BTNodeDescriptor 
 
         uint16_t recordType = rawNode[recordAddress[i] + key.keyLength + sizeof(key.keyLength) + 1];
         if (recordType == FileRecord) {
-            *catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile, (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
+            *catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile,
+                                            (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
             ConvertCatalogFile(catalogFile);
             if (catalogFile->fileID == fileId) {
                 return catalogFile;
-            }
-            else {
+            } else {
                 continue;
             }
         } else {
@@ -257,14 +281,10 @@ HFSPlusCatalogFile* GetFileRecordFromLeafNode(uint32_t fileId, BTNodeDescriptor 
     return NULL;
 }
 
-uint32_t ParseLeafNodeWithCondition(char* rawNode, const char* folderName, uint32_t folderParentId, BTHeaderRec btreeHeader,
-                                    BTNodeDescriptor descriptor, enum HFSDataRecordType recordTypeToFind) {
+uint32_t ParseLeafNodeWithCondition(char *rawNode, const char *folderName, uint32_t folderParentId,
+                                    BTHeaderRec btreeHeader, BTNodeDescriptor descriptor,
+                                    enum HFSDataRecordType recordTypeToFind) {
     uint16_t recordAddress[descriptor.numRecords];
-    int j = 0;
-//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-//        j += 1;
-//    }
 
     FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
 
@@ -286,7 +306,8 @@ uint32_t ParseLeafNodeWithCondition(char* rawNode, const char* folderName, uint3
                 return catalogFolder.folderID;
             }
         } else if (recordType == FileRecord && recordTypeToFind == FileRecord) {
-            catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile, (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
+            catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile,
+                                           (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
             ConvertCatalogFile(&catalogFile);
             if (HFSStrToStrCmp(key.nodeName, folderName)) {
                 return catalogFile.fileID;
@@ -299,8 +320,8 @@ uint32_t ParseLeafNodeWithCondition(char* rawNode, const char* folderName, uint3
     return 0;
 }
 
-uint32_t FindIdOfFile(const char* fileName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
-    char* rawNode = calloc(sizeof(char), fs.blockSize);
+uint32_t FindIdOfFile(const char *fileName, uint32_t folderParentId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
+    char *rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
@@ -312,15 +333,15 @@ uint32_t FindIdOfFile(const char* fileName, uint32_t folderParentId, BTHeaderRec
     FlexRead(rawNode, fs.blockSize, 1, fs.file);
 
     while (!isLastNode) {
-        descriptor = CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode);
-        ConvertBTreeNodeDescriptor(&descriptor);
+        ReadNodeDescriptor(fs, nodeBlockNumber, &descriptor, rawNode);
         if (descriptor.fLink == 0) {
             isLastNode = true;
         }
 
         id = ParseLeafNodeWithCondition(rawNode, fileName, folderParentId, catalogBTHeader, descriptor, FileRecord);
         if (id == 0) {
-            id = ParseLeafNodeWithCondition(rawNode, fileName, folderParentId, catalogBTHeader, descriptor, FolderRecord);
+            id = ParseLeafNodeWithCondition(rawNode, fileName, folderParentId, catalogBTHeader, descriptor,
+                                            FolderRecord);
         }
         if (id != 0) break;
         if (blockNum == fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
@@ -340,8 +361,8 @@ uint32_t FindIdOfFile(const char* fileName, uint32_t folderParentId, BTHeaderRec
     return id;
 }
 
-HFSPlusCatalogFile* GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
-    char* rawNode = calloc(sizeof(char), fs.blockSize);
+HFSPlusCatalogFile *GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs) {
+    char *rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
@@ -351,11 +372,10 @@ HFSPlusCatalogFile* GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, 
     FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
     FlexRead(rawNode, fs.blockSize, 1, fs.file);
 
-    HFSPlusCatalogFile * catalogFile = NULL;
+    HFSPlusCatalogFile *catalogFile = NULL;
 
     while (!isLastNode) {
-        descriptor = CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode);
-        ConvertBTreeNodeDescriptor(&descriptor);
+        ReadNodeDescriptor(fs, nodeBlockNumber, &descriptor, rawNode);
         if (descriptor.fLink == 0) {
             isLastNode = true;
         }
@@ -380,14 +400,10 @@ HFSPlusCatalogFile* GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, 
     return NULL;
 }
 
-PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTHeaderRec btreeHeader,
-                               BTNodeDescriptor descriptor, PathListNode** listHead, CopyInfo copyInfo, FlexCommanderFS fs) {
+PathListNode *_GetChildrenDirs(uint32_t parentFolderId, const char *rawNode, BTHeaderRec btreeHeader,
+                               BTNodeDescriptor descriptor, PathListNode **listHead, CopyInfo copyInfo,
+                               FlexCommanderFS fs) {
     uint16_t recordAddress[descriptor.numRecords];
-//    int j = 0;
-//    for (int i = btreeHeader.nodeSize - 1; i >= btreeHeader.nodeSize - descriptor.numRecords * 2; i -= 2) {
-//        recordAddress[j] = (rawNode[i - 1] << 8) | (uint8_t) rawNode[i];
-//        j += 1;
-//    }
 
     FillRecordAddress(btreeHeader, descriptor, rawNode, recordAddress);
     for (int i = 0; i < descriptor.numRecords; i++) {
@@ -408,7 +424,8 @@ PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTH
             node._cnid = catalogFolder.folderID;
             PathListAdd(listHead, node);
         } else if (recordType == FileRecord) {
-            catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile, (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
+            catalogFile = CAST_PTR_TO_TYPE(HFSPlusCatalogFile,
+                                           (rawNode + recordAddress[i] + key.keyLength + sizeof(key.keyLength)));
             ConvertCatalogFile(&catalogFile);
             CopyFile(copyInfo.dest, HFSStringToBytes(key.nodeName), catalogFile, &fs);
         } else {
@@ -418,42 +435,26 @@ PathListNode* _GetChildrenDirs(uint32_t parentFolderId, const char* rawNode, BTH
     return *listHead;
 }
 
-PathListNode* GetChildrenDirectoriesList(uint32_t parentFolderId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs,
+PathListNode *GetChildrenDirectoriesList(uint32_t parentFolderId, BTHeaderRec catalogBTHeader, FlexCommanderFS fs,
                                          CopyInfo copyInfo) {
-    char* rawNode = calloc(sizeof(char), fs.blockSize);
+    char *rawNode = calloc(sizeof(char), fs.blockSize);
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
-    uint32_t extentNum = 0;
-    uint32_t currentBlockNum = catalogBTHeader.firstLeafNode;
+    uint64_t extentNum = 0;
+    uint64_t currentBlockNum = catalogBTHeader.firstLeafNode;
 
-    PathListNode* list = NULL;
+    PathListNode *list = NULL;
     // Here's traversal algorithm that I am pretty fucking sure works
     while (!isLastNode) {
-        FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-        FlexRead(rawNode, fs.blockSize, 1, fs.file);
-        descriptor = CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode);
-        ConvertBTreeNodeDescriptor(&descriptor);
+        ReadNodeDescriptor(fs, nodeBlockNumber, &descriptor, rawNode);
         if (descriptor.fLink == 0) {
             isLastNode = true;
         }
 
         list = _GetChildrenDirs(parentFolderId, rawNode, catalogBTHeader, descriptor, &list, copyInfo, fs);
 
-        if (nodeBlockNumber == fs.volumeHeader.catalogFile.extents[extentNum].startBlock +
-                               fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
-            extentNum += 1;
-            nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock;
-        } else {
-            nodeBlockNumber += descriptor.fLink - currentBlockNum;
-            if (nodeBlockNumber >= fs.volumeHeader.catalogFile.extents[extentNum].startBlock +
-                                   fs.volumeHeader.catalogFile.extents[extentNum].blockCount) {
-                extentNum += 1;
-                nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock;
-            }
-        }
-
-        currentBlockNum = descriptor.fLink;
+        GetNextBlockNum(&nodeBlockNumber, &extentNum, &currentBlockNum, descriptor, fs);
     }
 
     free(rawNode);
