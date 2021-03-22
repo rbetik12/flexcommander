@@ -9,12 +9,12 @@ struct __attribute__((__packed__)) HFSPlusCatalogKey {
 };
 typedef struct HFSPlusCatalogKey HFSPlusCatalogKey;
 
-enum HFSDataRecordType {
+typedef enum HFSDataRecordType {
     FolderRecord        = 0x0001,
     FileRecord          = 0x0002,
     FolderThreadRecord  = 0x0003,
     FileThreadRecord    = 0x0004
-};
+} HFSDataRecordType;
 
 struct __attribute__((__packed__)) HFSPlusBSDInfo {
     UInt32  ownerID;
