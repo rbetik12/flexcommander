@@ -49,3 +49,17 @@ PathListNode* GetPathListLastNode(PathListNode** listHead) {
 
     return listStart;
 }
+
+void PathListClear(PathListNode *listHead) {
+    PathListNode *start = listHead;
+    PathListNode *prev = NULL;
+
+    while (start) {
+        prev = start;
+        start = start->next;
+
+        if (prev) {
+            free(prev);
+        }
+    }
+}

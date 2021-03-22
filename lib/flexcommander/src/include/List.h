@@ -18,3 +18,4 @@ typedef struct FSRecordListNode {
 void FSRecordListAdd(FSRecordListNode** listHead, FSRecordListNode newNode);
 PathListNode* GetPathListLastNode(PathListNode** listHead);
 void PathListAdd(PathListNode** listHead, PathListNode newNode);
+void PathListClear(PathListNode *listHead);

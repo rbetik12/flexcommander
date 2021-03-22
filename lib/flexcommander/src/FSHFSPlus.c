@@ -150,6 +150,8 @@ int FlexListDirContent(const char *path, FlexCommanderFS *fs) {
         }
         list = list->next;
     }
+
+    PathListClear(listStart);
     return 0;
 }
 
@@ -157,10 +159,12 @@ int FlexSetCurrentDir(const char* path, FlexCommanderFS* fs) {
     if (strcmp(path, "") == 0 | strcmp(path, "\n") == 0) {
         return -1;
     }
+    int result = -1;
     char *pathCopy = malloc(strlen(path) + 1);
     strcpy(pathCopy, path);
     pathCopy[strlen(pathCopy) - 1] = 0;
     PathListNode *list = SplitPath(pathCopy);
+    PathListNode *listHead = list;
     free(pathCopy);
 
     BTHeaderRec catalogFileHeader;
@@ -170,16 +174,19 @@ int FlexSetCurrentDir(const char* path, FlexCommanderFS* fs) {
     while (list) {
         if (list->next == NULL) {
             if (parentID == 0) {
-                return -1;
+                result = -1;
+                break;
             }
-            return 0;
+            result = 0;
+            break;
         }
         else {
             parentID = FindIdOfFolder(list->next->token, parentID, catalogFileHeader, *fs);
         }
         list = list->next;
     }
-    return -1;
+    PathListClear(listHead);
+    return result;
 }
 
 void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec *header, FlexCommanderFS *fs) {
@@ -199,6 +206,7 @@ void ExtractCatalogBtreeHeader(uint64_t block, BTHeaderRec *header, FlexCommande
 
 int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
     PathListNode *list = SplitPathWithDelimeter(path, " ");
+    PathListNode *listHead = list;
     char *src;
     char *dest;
     uint32_t i = 0;
@@ -216,6 +224,7 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
         i++;
         list = list->next;
     }
+    PathListClear(listHead);
 
     char srcPath[1024];
     if (src[0] == '.') {
@@ -252,7 +261,7 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
         else {
             parentID = FindIdOfFolder(splitedSrcPathList->next->token, parentID, header, *fs);
         }
-        splitedSrcPathList  = splitedSrcPathList ->next;
+        splitedSrcPathList  = splitedSrcPathList->next;
     }
 
     if (parentID != 0) {
@@ -285,5 +294,6 @@ int FlexCopy(const char* path, const char* currentDir, FlexCommanderFS* fs) {
         free(file);
     }
 
+    PathListClear(splitedSrcPathListStart);
     return 0;
 }
