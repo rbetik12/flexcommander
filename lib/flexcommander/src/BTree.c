@@ -178,31 +178,18 @@ void ListDirectoryContent(uint32_t parentID, BTHeaderRec catalogBTHeader, FlexCo
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
-    uint32_t id;
-    uint32_t extentNum = 0;
-    uint32_t blockNum = 0;
-
-    FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-    FlexRead(rawNode, fs.blockSize, 1, fs.file);
+    uint64_t extentNum = 0;
+    uint64_t currentBlockNum = 0;
 
     while (!isLastNode) {
-        descriptor = CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode);
-        ConvertBTreeNodeDescriptor(&descriptor);
+        ReadNodeDescriptor(fs, nodeBlockNumber, &descriptor, rawNode);
         if (descriptor.fLink == 0) {
             isLastNode = true;
         }
 
         ParseLeafNodeContent(rawNode, parentID, catalogBTHeader, fs, descriptor);
-        if (blockNum == fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
-            blockNum = 0;
-            extentNum += 1;
-        }
-        nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock
-                          + (descriptor.fLink % fs.volumeHeader.catalogFile.extents[extentNum].blockCount);
 
-        FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-        FlexRead(rawNode, fs.blockSize, 1, fs.file);
-        blockNum += 1;
+        GetNextBlockNum(&nodeBlockNumber, &extentNum, &currentBlockNum, descriptor, fs);
     }
 
     free(rawNode);
@@ -215,35 +202,22 @@ uint32_t FindIdOfFolder(const char *folderName, uint32_t folderParentId,
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
     uint32_t id;
-    uint32_t extentNum = 0;
-    uint32_t blockNum = 0;
-
-    FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-    FlexRead(rawNode, fs.blockSize, 1, fs.file);
+    uint64_t extentNum = 0;
+    uint64_t currentBlockNum = 0;
 
     while (!isLastNode) {
-        descriptor = CAST_PTR_TO_TYPE(BTNodeDescriptor, rawNode);
-        ConvertBTreeNodeDescriptor(&descriptor);
+        ReadNodeDescriptor(fs, nodeBlockNumber, &descriptor, rawNode);
         if (descriptor.fLink == 0) {
             isLastNode = true;
         }
 
         id = ParseLeafNode(rawNode, folderName, folderParentId, catalogBTHeader, descriptor);
         if (id != 0) break;
-        if (blockNum == fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
-            blockNum = 0;
-            extentNum += 1;
-        }
-        nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock
-                          + (descriptor.fLink % fs.volumeHeader.catalogFile.extents[extentNum].blockCount);
 
-        FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-        FlexRead(rawNode, fs.blockSize, 1, fs.file);
-        blockNum += 1;
+        GetNextBlockNum(&nodeBlockNumber, &extentNum, &currentBlockNum, descriptor, fs);
     }
 
     free(rawNode);
-
     return id;
 }
 
@@ -326,11 +300,8 @@ uint32_t FindIdOfFile(const char *fileName, uint32_t folderParentId, BTHeaderRec
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
     uint32_t id;
-    uint32_t extentNum = 0;
-    uint32_t blockNum = 0;
-
-    FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-    FlexRead(rawNode, fs.blockSize, 1, fs.file);
+    uint64_t extentNum = 0;
+    uint64_t currentBlockNum = catalogBTHeader.firstLeafNode;
 
     while (!isLastNode) {
         ReadNodeDescriptor(fs, nodeBlockNumber, &descriptor, rawNode);
@@ -344,20 +315,11 @@ uint32_t FindIdOfFile(const char *fileName, uint32_t folderParentId, BTHeaderRec
                                             FolderRecord);
         }
         if (id != 0) break;
-        if (blockNum == fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
-            blockNum = 0;
-            extentNum += 1;
-        }
-        nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock
-                          + (descriptor.fLink % fs.volumeHeader.catalogFile.extents[extentNum].blockCount);
 
-        FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-        FlexRead(rawNode, fs.blockSize, 1, fs.file);
-        blockNum += 1;
+        GetNextBlockNum(&nodeBlockNumber, &extentNum, &currentBlockNum, descriptor, fs);
     }
 
     free(rawNode);
-
     return id;
 }
 
@@ -366,12 +328,8 @@ HFSPlusCatalogFile *GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, 
     uint64_t nodeBlockNumber = catalogBTHeader.firstLeafNode + fs.catalogFileBlock;
     BTNodeDescriptor descriptor;
     bool isLastNode = false;
-    uint32_t extentNum = 0;
-    uint32_t blockNum = 0;
-
-    FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-    FlexRead(rawNode, fs.blockSize, 1, fs.file);
-
+    uint64_t extentNum = 0;
+    uint64_t currentBlockNum = catalogBTHeader.firstLeafNode;
     HFSPlusCatalogFile *catalogFile = NULL;
 
     while (!isLastNode) {
@@ -384,16 +342,8 @@ HFSPlusCatalogFile *GetFileRecord(uint32_t fileId, BTHeaderRec catalogBTHeader, 
         if (catalogFile != NULL) {
             return catalogFile;
         }
-        if (blockNum == fs.volumeHeader.catalogFile.extents[extentNum].blockCount - 1) {
-            blockNum = 0;
-            extentNum += 1;
-        }
-        nodeBlockNumber = fs.volumeHeader.catalogFile.extents[extentNum].startBlock
-                          + (descriptor.fLink % fs.volumeHeader.catalogFile.extents[extentNum].blockCount);
 
-        FlexFSeek(fs.file, nodeBlockNumber * fs.blockSize, SEEK_SET);
-        FlexRead(rawNode, fs.blockSize, 1, fs.file);
-        blockNum += 1;
+        GetNextBlockNum(&nodeBlockNumber, &extentNum, &currentBlockNum, descriptor, fs);
     }
 
     free(rawNode);
