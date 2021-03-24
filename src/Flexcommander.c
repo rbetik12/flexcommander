@@ -7,6 +7,23 @@
 
 #define DEBUG
 
+void StripString(char *string);
+
+void ParseRelativePath(const char* path, const char* currentDir) {
+    StripString(path);
+    if (path[0] == '.') {
+        const size_t currentDirLength = strlen(currentDir);
+        const size_t pathLength = strlen(path);
+        char* currentPathBuffer = calloc(COMMAND_MAX_LENGTH, 1);
+
+        memcpy(currentPathBuffer, path + 1, pathLength + 1);
+        memset(path, 0, COMMAND_MAX_LENGTH);
+        memcpy(path, currentDir, currentDirLength);
+        memcpy(path + currentDirLength, currentPathBuffer, pathLength);
+        free(currentPathBuffer);
+    }
+}
+
 void StripString(char *string) {
     uint64_t index = 0;
     while (string[index] != '\0') {
@@ -49,18 +66,24 @@ int main(int argc, char **argv) {
         printf("Welcome to the club, buddy!\n");
 
         char *currentDir = calloc(CURRENT_DIR_STRING_LENGTH, sizeof(char));
+        char* str = calloc(COMMAND_MAX_LENGTH, 1);
+
         currentDir[0] = '/';
+
         while (1) {
-            char str[COMMAND_MAX_LENGTH] = {0};
             StripString(currentDir);
             fputs(currentDir, stdout);
             fputs(">", stdout);
             fflush(stdout);
-            fgets(str, sizeof(str), stdin);
+            fgets(str, COMMAND_MAX_LENGTH, stdin);
             if (strcmp("exit\n", str) == 0) {
                 printf("Bye!\n");
                 break;
             }
+
+            //I assume that all commands will be 2 characters length
+            ParseRelativePath(str + 3, currentDir);
+
             if (str[0] == 'l' && str[1] == 's') {
                 if (str[3] == '.') {
                     FlexListDirContent(currentDir, &fs);
@@ -80,8 +103,10 @@ int main(int argc, char **argv) {
             else {
                 printf("Unknown command!\n");
             }
+            memset(str, 0, COMMAND_MAX_LENGTH);
         }
         free(currentDir);
+        free(str);
 #ifndef DEBUG
     } else {
         fputs("Unknown key!\n", stderr);
