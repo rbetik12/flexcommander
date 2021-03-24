@@ -9,19 +9,24 @@
 
 void StripString(char *string);
 
-void ParseRelativePath(const char* path, const char* currentDir) {
+int ParseRelativePath(char* path, char* currentDir) {
+    if (path[0] != '.' && path[0] != '/') {
+        return -1;
+    }
     StripString(path);
+    const size_t currentDirLength = strlen(currentDir);
+    const size_t pathLength = strlen(path);
+
     if (path[0] == '.') {
-        const size_t currentDirLength = strlen(currentDir);
-        const size_t pathLength = strlen(path);
         char* currentPathBuffer = calloc(COMMAND_MAX_LENGTH, 1);
 
         memcpy(currentPathBuffer, path + 1, pathLength + 1);
         memset(path, 0, COMMAND_MAX_LENGTH);
-        memcpy(path, currentDir, currentDirLength);
-        memcpy(path + currentDirLength, currentPathBuffer, pathLength);
+        memcpy(path, currentDir + 1, currentDirLength - 1);
+        memcpy(path + currentDirLength - 1, currentPathBuffer, pathLength);
         free(currentPathBuffer);
     }
+    return 0;
 }
 
 void StripString(char *string) {
@@ -82,14 +87,12 @@ int main(int argc, char **argv) {
             }
 
             //I assume that all commands will be 2 characters length
-            ParseRelativePath(str + 3, currentDir);
+            if (ParseRelativePath(str + 3, currentDir)) {
+                fputs("Incorrect path\n", stderr);
+            }
 
             if (str[0] == 'l' && str[1] == 's') {
-                if (str[3] == '.') {
-                    FlexListDirContent(currentDir, &fs);
-                } else {
-                    FlexListDirContent(str + 3, &fs);
-                }
+                FlexListDirContent(str + 3, &fs);
             } else if (str[0] == 'c' && str[1] == 'd') {
                 if (FlexSetCurrentDir(str + 3, &fs)) {
                     fprintf(stderr, "Path doesn't exist!\n");

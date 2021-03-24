@@ -162,7 +162,6 @@ int FlexSetCurrentDir(const char* path, FlexCommanderFS* fs) {
     int result = -1;
     char *pathCopy = malloc(strlen(path) + 1);
     strcpy(pathCopy, path);
-    pathCopy[strlen(pathCopy) - 1] = 0;
     PathListNode *list = SplitPath(pathCopy);
     PathListNode *listHead = list;
     free(pathCopy);
