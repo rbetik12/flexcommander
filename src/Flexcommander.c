@@ -20,10 +20,18 @@ int ParseRelativePath(char* path, char* currentDir) {
     if (path[0] == '.') {
         char* currentPathBuffer = calloc(COMMAND_MAX_LENGTH, 1);
 
-        memcpy(currentPathBuffer, path + 1, pathLength + 1);
-        memset(path, 0, COMMAND_MAX_LENGTH);
-        memcpy(path, currentDir + 1, currentDirLength - 1);
-        memcpy(path + currentDirLength - 1, currentPathBuffer, pathLength);
+        if (pathLength > 1 && currentDirLength < 2) {
+            memcpy(currentPathBuffer, path + 1, pathLength + 1);
+            memset(path, 0, COMMAND_MAX_LENGTH);
+            memcpy(path, currentDir + 1, currentDirLength - 1);
+            memcpy(path + currentDirLength - 1, currentPathBuffer, pathLength);
+        }
+        else {
+            memcpy(currentPathBuffer, path + 1, pathLength + 1);
+            memset(path, 0, COMMAND_MAX_LENGTH);
+            memcpy(path, currentDir, currentDirLength);
+            memcpy(path + currentDirLength, currentPathBuffer, pathLength);
+        }
         free(currentPathBuffer);
     }
     return 0;
