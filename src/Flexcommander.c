@@ -1,6 +1,7 @@
 #include <Flexcommander.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define CURRENT_DIR_STRING_LENGTH 200
 #define COMMAND_MAX_LENGTH CURRENT_DIR_STRING_LENGTH
@@ -65,7 +66,7 @@ int main(int argc, char **argv) {
 #endif
         FlexCommanderFS fs;
 #ifdef DEBUG
-        if (FlexOpen("hfs.img", &fs)) {
+        if (FlexOpen("img.bin", &fs)) {
             fprintf(stderr, "Error!\n");
             exit(EXIT_FAILURE);
         }
@@ -82,8 +83,8 @@ int main(int argc, char **argv) {
         char* str = calloc(COMMAND_MAX_LENGTH, 1);
 
         currentDir[0] = '/';
-
-        while (1) {
+        bool isExit = false;
+        while (!isExit) {
             StripString(currentDir);
             fputs(currentDir, stdout);
             fputs(">", stdout);
@@ -91,6 +92,7 @@ int main(int argc, char **argv) {
             fgets(str, COMMAND_MAX_LENGTH, stdin);
             if (strcmp("exit\n", str) == 0) {
                 printf("Bye!\n");
+                isExit = true;
                 break;
             }
 
